@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<!-- BŁĄD #4: BRAK <meta name="viewport"> w <head> — strona nie jest mobile-friendly -->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Kancelaria Testowa Kowalski</title>
+  <!-- BŁĄD #7a: brak <meta name="description"> -->
+  <!-- BŁĄD #7b: brak <script type="application/ld+json"> (dane strukturalne) -->
+  <style>
+    body { font-family: Georgia, "Times New Roman", serif; margin: 0; color: #222; }
+    .hero { position: relative; text-align: center; }
+    .hero img { width: 100%; height: auto; display: block; }
+    .hero h1 { font-size: 42px; margin: 24px 0 8px; }
+    .hero p { font-size: 18px; color: #555; margin: 0 0 32px; }
+    .tresc { max-width: 760px; margin: 0 auto; padding: 40px 20px 60px; }
+    .tresc p { font-size: 17px; line-height: 1.7; text-align: justify; }
+    footer { border-top: 1px solid #ddd; padding: 16px 20px; color: #999; }
+  </style>
+</head>
+<body>
+
+  <section class="hero">
+    <!-- BŁĄD #3: ogromne, nieskompresowane zdjęcie hero (~5 MB) — zabija LCP/wydajność -->
+    <img src="hero-5mb.jpg" alt="">
+    <!-- BŁĄD #1: H1 bez konkretnej specjalizacji — "Profesjonalna obsługa prawna" nie mówi czym się zajmują -->
+    <h1>Profesjonalna obsługa prawna</h1>
+    <p>Zapraszamy do współpracy.</p>
+    <!-- BŁĄD #2: brak jakiegokolwiek CTA w hero (żadnego przycisku/linku "umów konsultację", "napisz", "zadzwoń") -->
+  </section>
+
+  <section class="tresc">
+    <!-- BŁĄD #5: ściana tekstu — jeden akapit ~300 słów, zero H2/H3, zero list -->
+    <!-- BŁĄD #8: zwroty wartościujące + obietnica wyniku ("najlepsza", "gwarantujemy wygraną") -->
+    <p>
+      Nasza kancelaria oferuje kompleksową obsługę prawną dla klientów indywidualnych oraz
+      przedsiębiorstw w szerokim zakresie spraw, począwszy od bieżącego doradztwa, poprzez
+      sporządzanie i opiniowanie umów, aż po reprezentację przed sądami i organami administracji.
+      Działamy na rynku od wielu lat i każdego dnia staramy się, aby świadczone przez nas usługi
+      odpowiadały na realne potrzeby osób, które się do nas zgłaszają. Rozumiemy, że sprawy prawne
+      bywają skomplikowane i stresujące, dlatego do każdego zlecenia podchodzimy z najwyższą
+      starannością oraz zaangażowaniem, dbając o to, by klient na każdym etapie współpracy czuł się
+      odpowiednio poinformowany i zaopiekowany. Zajmujemy się zarówno prostymi sprawami, które
+      wymagają jedynie krótkiej porady, jak i wieloletnimi, złożonymi postępowaniami obejmującymi
+      wiele wątków i licznych uczestników. W swojej pracy łączymy wiedzę teoretyczną z praktycznym
+      doświadczeniem zdobytym w toku prowadzenia wielu różnorodnych spraw, co pozwala nam dobierać
+      rozwiązania najlepiej dopasowane do konkretnej sytuacji. Współpracujemy z klientami z całego
+      kraju, oferując kontakt zarówno w naszym biurze, jak i zdalnie, tak aby odległość nigdy nie
+      stanowiła przeszkody w uzyskaniu profesjonalnej pomocy. Zapewniamy pełną poufność oraz
+      indywidualne podejście do każdej powierzonej nam sprawy, ponieważ wiemy, że zaufanie jest
+      fundamentem każdej dobrej relacji między prawnikiem a klientem. Niezależnie od tego, czy
+      potrzebujesz jednorazowej konsultacji, czy stałej obsługi prawnej swojej firmy, jesteśmy
+      gotowi, aby Ci pomóc i przeprowadzić Cię przez cały proces krok po kroku. Jesteśmy najlepszą
+      kancelarią w mieście i gwarantujemy wygraną w każdej sprawie, dlatego nie wahaj się i już dziś
+      powierz nam swoje sprawy, a my zajmiemy się wszystkim za Ciebie.
+    </p>
+  </section>
+
+  <footer>
+    <!-- BŁĄD #2 (c.d.): kontakt schowany TYLKO w stopce, mały tekst -->
+    <p style="font-size:10px">tel. 123456789</p>
+    <!-- BŁĄD #6: zero opinii, zero liczb, zero zespołu nigdzie na stronie -->
+  </footer>
+
+</body>
+</html>

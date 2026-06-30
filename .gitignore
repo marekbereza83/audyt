@@ -1,0 +1,25 @@
+# === Sekrety — NIGDY do repo ===
+# .claude/settings.local.json zawiera zapisane komendy z kluczem Firecrawl w jawnym tekście
+.claude/settings.local.json
+# Klucze API (siatka bezpieczeństwa — dodatkowo do scripts/.env w skillu)
+.env
+**/.env
+*.env.local
+
+# === Zależności ===
+**/node_modules/
+
+# === Cloudflare Wrangler — lokalny cache (zawiera account ID) ===
+.wrangler/
+**/.wrangler/
+
+# === Artefakty audytów (generowane, ciężkie) ===
+audyt-kancelarii-skill/output/
+
+# === Duże pliki testowe ===
+**/hero-5mb.jpg
+**/hero-srednia.jpg
+
+# === System ===
+Thumbs.db
+.DS_Store

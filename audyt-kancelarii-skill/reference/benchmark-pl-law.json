@@ -1,0 +1,89 @@
+{
+  "industry": "law-pl",
+  "sourceCount": 21,
+  "aggregates": {
+    "heroCtaPresent": "6/21",
+    "consultationOffer": "2/21",
+    "contactFormHomepage": "0/21",
+    "directPhone": "4/21",
+    "ctaPhilosophyNone": "13/21",
+    "qualityScore": {
+      "min": 30,
+      "median": 60,
+      "max": 83
+    }
+  },
+  "topPerformers": [
+    {
+      "site": "Axelo",
+      "quality": 83,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": false,
+      "tone": "aggressive"
+    },
+    {
+      "site": "BBS Legal (Brysiewicz, Bokina i Wspólnicy)",
+      "quality": 81,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": false,
+      "tone": "conversational"
+    },
+    {
+      "site": "CGO Legal",
+      "quality": 81,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": false,
+      "tone": "conversational"
+    },
+    {
+      "site": "RS Legal (Radzikowski, Szubielska i Wspólnicy)",
+      "quality": 81,
+      "tier": "high",
+      "heroCta": true,
+      "consultation": false,
+      "tone": "professional"
+    },
+    {
+      "site": "rslegal",
+      "quality": 81,
+      "tier": "high",
+      "heroCta": true,
+      "consultation": false,
+      "tone": "professional"
+    },
+    {
+      "site": "SSW (Spaczyński, Szczepaniak, Wickel, Goździowska)",
+      "quality": 78,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": false,
+      "tone": "conversational"
+    },
+    {
+      "site": "Kopeć & Zaborowski (KKZ)",
+      "quality": 74,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": false,
+      "tone": "professional"
+    },
+    {
+      "site": "Dudkowiak & Putyra",
+      "quality": 70,
+      "tier": "high",
+      "heroCta": false,
+      "consultation": true,
+      "tone": "conversational"
+    }
+  ],
+  "commonGaps": [
+    "13/21 kancelarii nie ma zadnej strategii CTA (ctaPhilosophy: none)",
+    "Tylko 2/21 oferuje konsultacje wprost",
+    "Zadna nie ma formularza kontaktowego na stronie glownej",
+    "Tylko 6/21 ma CTA w hero",
+    "Mediana quality score to 60/100 — duzo miejsca na wyroznienie"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "audyt-kancelarii-scripts",
+  "version": "1.0.0",
+  "description": "Scraper do audytu stron kancelarii — Firecrawl + Playwright + Lighthouse",
+  "main": "scrape.js",
+  "scripts": {
+    "audyt": "node scrape.js"
+  },
+  "dependencies": {
+    "chrome-launcher": "^1.1.0",
+    "dotenv": "^17.4.2",
+    "firecrawl": "^1.0.0",
+    "lighthouse": "^12.0.0",
+    "playwright": "^1.44.0"
+  }
+}

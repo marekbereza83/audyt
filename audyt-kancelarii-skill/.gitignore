@@ -1,0 +1,5 @@
+scripts/.env
+scripts/node_modules/
+output/
+zla-strona-testowa/hero-5mb.jpg
+zla-strona-testowa/srednia/hero-srednia.jpg

@@ -93,4 +93,26 @@ Największy potencjał: [1 zdanie — co da największy zwrot]. Pozostałe zmian
 
 ---
 
+## Ocena leada
+
+> **Sekcja wewnętrzna (FORMA) — NIGDY nie wysyłaj jej kancelarii.** Kwalifikacja: czy warto pisać cold mail. Ton biznesowy, każda odpowiedź z danych. Progi i logika: `kryteria-audytu.md` → „Ocena leada".
+
+**Werdykt:** [🟢 PISZ TERAZ / 🟡 PISZ INACZEJ / 🔴 ODPUŚĆ] — [liczba „tak", P1 ×2]
+
+[Jeśli P1 = `za-malo-danych` z powodu niejednoznacznych sygnałów statusu — napisz tu wprost: „⚠️ P1 wymaga oceny na screenshocie".]
+
+| # | Pytanie | Odpowiedź | Uzasadnienie (z danych) |
+|---|---|---|---|
+| **P1 ⭐** | Kancelaria zamożniejsza niż jej strona? (rozdźwięk, waga ×2) | tak / nie / za mało danych | [status vs score — 1 zdanie] |
+| P2 | Strona starsza niż 6–7 lat? | tak / nie / za mało danych | [ageSignals + https/mobile] |
+| P3 | Budżet 5–10 tys. zł bez problemu? | tak / nie / za mało danych | [specjalizacja/zespół/miasto] |
+| P4 | Nowa strona poprawi pierwszy kontakt? | tak / nie | [problemy pierwszego wrażenia z audytu] |
+| P5 | Brak świeżych inwestycji w stronę? | tak / nie / za mało danych | [JSON-LD/SEO/copyright/HTTPS] |
+
+**Dostępność kontaktu:** [osobisty email `imie.nazwisko@` / `biuro@` (zginie w sekretariacie) / brak — czerwony flag]
+
+**Rekomendowane podejście:** [dla 🟢: „standardowy cold mail z audytem". Dla 🟡: JAKIE inne podejście (np. „strona dobra — zaproponuj X zamiast listy problemów" lub „bardzo słaba — zacznij pytaniem, nie audytem"). Dla 🔴: powód odpuszczenia.]
+
+---
+
 > **Notatka (nie część raportu):** Fragment do maila generowany jest osobno do `mail-fragment.txt` — bierze najważniejszy problem z sekcji „Mówiąc wprost", skrócony do 2–4 zdań (maks. ~400 znaków, czysty tekst). W trybie wsadowym wszystkie fragmenty trafiają do `output/batch-fragments.csv` (`node batch-report.js <lista.csv>`).

@@ -167,3 +167,49 @@ Każda rekomendacja w raporcie („Jak bym to rozwiązał") dostaje oznaczenie *
 | Przebudowa na responsywny szablon | 3, 4, 5 | przebudowa (tygodnie) | wysoki, ale kosztowny |
 
 **Reguła kolejności:** w raporcie listuj najpierw poprawki z górnych wierszy (tanie + wysoki efekt), na końcu kosztowne przebudowy. Jeśli rekomendacja nie pasuje do żadnego wiersza, dobierz najbliższy wysiłek/efekt i oznacz analogicznie — nie zostawiaj rekomendacji bez tej pary.
+
+---
+
+## Ocena leada (warstwa biznesowa — dla FORMA, nie dla kancelarii)
+
+Po ocenie 8 wymiarów odpowiedz na osobne pytanie: **czy w ogóle warto wysłać tej kancelarii cold mail?** Nie każda strona ze słabym score to dobry lead. To **wewnętrzna kwalifikacja** — trafia do `audyt.md` i `audyt-dane.json`, **nigdy do `mail-fragment.txt`**.
+
+Rdzeń to **5 pytań kwalifikujących**. Wszystkie mierzą jedno: **rozdźwięk między statusem kancelarii a jakością/wiekiem strony oraz zaniedbanie**. Ton biznesowy, nie oceniający („mały budżet prawdopodobny", nie „ta kancelaria jest biedna"). Każda odpowiedź z danych; brak danych = `za-malo-danych`, nie zgadywanie — zwłaszcza P1 i P3.
+
+Te 5 pytań pełni **dwie role, ta sama logika w dwóch głębokościach**:
+- **Etap 0 (kwalifikacja wizualna)** — zgrubne odpowiedzi z samego screenshota / strony głównej **przed** pełnym audytem (`node scrape.js --peek <url>`). Odsiewa oczywiste 🔴, oszczędza czas i limit Firecrawl. Jeśli od razu 🔴 → zapisz `lead-skip.txt` i nie scrapuj (patrz `SKILL.md` Krok 0).
+- **Krok 5 (pełna ocena)** — udokumentowane odpowiedzi po audycie, na danych z `content.json`/`vitals.json`/`servicesPage`/`ageSignals`. To ostateczny werdykt.
+
+### 5 pytań kwalifikujących
+
+Dla każdego: odpowiedź `tak` / `nie` / `za-malo-danych` + jedno zdanie uzasadnienia z danych.
+
+**P1 ⭐ (waga PODWÓJNA — najważniejsze) — Czy kancelaria wygląda na zamożniejszą niż jej strona?**
+Rozdźwięk = idealny target: jest budżet i jest wstyd. Sygnały statusu: specjalizacja biznesowa (corporate/M&A/podatki/gospodarcze z `servicesPage.practiceAreas`), „i Wspólnicy"/zespół (`trustSignals.team`), duże miasto (nazwa/tracker), klasa biura na zdjęciach (screenshot), prestiżowi klienci wymienieni w treści. Zestaw to ze score audytu: **wysoki status + score < 60 → `tak`** (mocny sygnał). Jeśli sygnały z danych niejednoznaczne → `za-malo-danych` i ustaw `wymagaOcenyScreenshot: true` („wymaga oka użytkownika na screenshot").
+
+**P2 — Czy strona ma ponad 6–7 lat?**
+Ślady wieku łączą `content.json.ageSignals` (`copyrightYear` stary, `generator` np. „Joomla! 1.5", `templateHints` np. „templatemo") + `vitals.json` (`https = false`, `mobileFriendly = false`). Sygnały się sumują — **2+ ślady = prawdopodobnie `tak`**.
+
+**P3 — Czy właściciel prawdopodobnie wyda 5–10 tys. zł bez problemu?**
+„Bez problemu" = cena nie jest barierą decyzyjną. Sygnały: specjalizacja o wysokich stawkach (corporate, podatki, M&A, nieruchomości komercyjne), kancelaria wieloosobowa, duże miasto, obsługa klientów biznesowych. Za mało sygnałów → `za-malo-danych`, nie zgaduj.
+
+**P4 — Czy nowa strona realnie poprawi pierwszy kontakt z klientem?**
+Wynik audytu konwersji. Problemy pierwszego wrażenia (HTTPS, mobile, szybkość, CTA, jasność specjalizacji) na liście 🔴/🟡 → `tak`, realnie poprawi. Strona już dobra, a problemy kosmetyczne → `nie` (mniejszy sens kontaktu o stronie). Użyj score + listy problemów wysokiego priorytetu.
+
+**P5 — Czy właściciel prawdopodobnie nie inwestował w stronę ostatnio?**
+Brak śladów świeżej pracy: brak JSON-LD (`hasStructuredData = false`), brak optymalizacji SEO, stary `ageSignals.copyrightYear`, brak HTTPS. Nikt nie tknął strony od lat = otwarte drzwi. (Pokrywa się z P2, ale z perspektywy świeżości, nie wieku.)
+
+### Dane pomocnicze (kontekst do 5 pytań, nie osobny werdykt)
+
+- **Luka do naprawienia:** score 30–60 = najlepszy target; 80+ = odpuść stronę; < 25 = oznacz do ręcznej decyzji.
+- **Dostępność kontaktu:** bezpośredni email osobisty (`imie.nazwisko@`) łatwiejszy niż `kontakt@` / `biuro@` / formularz; brak kontaktu (`phone` + `email` puste, `hasForm = false`) = czerwony flag — nie ma jak/do kogo pisać.
+
+### Werdykt — segmentacja na podstawie 5 pytań
+
+Policz odpowiedzi `tak` (**P1 liczy się PODWÓJNIE**). Przypisz:
+
+- 🟢 **PISZ TERAZ** (`werdykt: "pisz"`) — **P1 = tak ORAZ ≥3 z pozostałych = tak**, jest kontakt. Klasyczny rozdźwięk: zamożna kancelaria, zaniedbana strona, budżet jest. Standardowy cold mail z audytem.
+- 🟡 **PISZ INACZEJ** (`werdykt: "pisz-inaczej"`) — sygnały mieszane: P1 tak ale P3 nie (brak budżetu), **albo** strona bardzo dobra (P4 nie — zaproponuj inne podejście niż „masz problemy"), **albo** strona skrajnie zła (zacznij od pytania, nie od listy problemów). Podaj JAKIE podejście.
+- 🔴 **ODPUŚĆ** (`werdykt: "odpusc"`) — brak kontaktu, **lub** P3 wyraźnie nie (brak budżetu), **lub** strona świeża i dobra (P2/P5 nie + wysoki score). Podaj powód.
+
+**Reguła rozstrzygająca:** brak kontaktu przebija wszystko → 🔴.

@@ -3,12 +3,14 @@
  * scrape.js — pobiera stronę kancelarii do audytu.
  * Użycie:
  *   node scrape.js <url> [<url-konkurenta>]    — pojedyncza strona (+ opcjonalny konkurent)
+ *   node scrape.js --peek <url>                — Etap 0: tylko screenshot (bez Firecrawl), kwalifikacja wizualna
  *   node scrape.js --batch <lista.csv>         — tryb wsadowy (CSV: nazwa,url), max 3 równolegle
  * Wymaga: FIRECRAWL_API_KEY w .env lub w env, zainstalowany chromium (npx playwright install chromium)
  *
  * Zwraca do output/<domena>/:
  *   content.json          — markdown, nagłówki, meta, CTA, formularze, dane kontaktowe
  *                           + servicesPage: dociągnięta podstrona „Zakres usług" (specjalizacja z treści, nie z hero)
+ *                           + ageSignals: ślady wieku/zaniedbania (copyright, generator, stary szablon) dla oceny leada
  *   vitals.json           — Core Web Vitals + performance score + https + mobile
  *   screenshot-desktop.png, screenshot-mobile.png
  *   competitor.json       — (tylko gdy podano url-konkurenta) { url, content, vitals } konkurenta
@@ -157,6 +159,46 @@ function detectPracticeAreas(md) {
   return found;
 }
 
+// ── Sygnały wieku/zaniedbania strony (dla oceny leada P2 i P5) ───────
+// Wykrywa ślady starej, dawno nieruszanej strony: rok z copyright, meta generator (CMS),
+// tanie/stare szablony (templatemo) i edytory. Surowe fakty — interpretację robi Claude.
+function detectAgeSignals(md, html) {
+  const text = (md || '') + '\n' + (html || '');
+  const signals = [];
+
+  // Najnowszy rok w kontekście copyright = kiedy stronę ostatnio (deklaratywnie) tknięto.
+  let copyrightYear = null;
+  const yearRe = /(?:©|&copy;|copyright|wszelkie prawa zastrzeżone)[\s\S]{0,40}?((?:19|20)\d{2})(?:\s*[-–—]\s*((?:19|20)\d{2}))?/gi;
+  let ym;
+  while ((ym = yearRe.exec(text)) !== null) {
+    const y = parseInt(ym[2] || ym[1], 10);
+    if (y >= 1995 && y <= 2100 && (copyrightYear === null || y > copyrightYear)) copyrightYear = y;
+  }
+  if (copyrightYear) signals.push('copyright ' + copyrightYear);
+
+  // <meta name="generator"> — oba układy atrybutów.
+  const g1 = html.match(/<meta[^>]+name=["']generator["'][^>]+content=["']([^"']+)["']/i);
+  const g2 = html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']generator["']/i);
+  const generator = (g1 && g1[1]) || (g2 && g2[1]) || null;
+  if (generator) signals.push('generator: ' + generator);
+
+  // Tanie/stare szablony i edytory — szukaj tylko w atrybutach tagów i komentarzach HTML,
+  // nie w treści widocznej (tekst artykułu o Joomli to nie jest dowód szablonu).
+  const structuralHtml = [
+    ...(html.match(/<!--[\s\S]*?-->/g) || []),
+    ...(html.match(/<[^>]+>/g) || []),
+  ].join('\n');
+  const templateHints = [];
+  [/templatemo/i, /dreamweaver/i, /frontpage/i, /\bjoomla\b/i, /\bdrupal\b/i].forEach(rx => {
+    const m = structuralHtml.match(rx);
+    if (m) templateHints.push(m[0].toLowerCase());
+  });
+  const uniqHints = [...new Set(templateHints)];
+  if (uniqHints.length) signals.push('szablon/silnik: ' + uniqHints.join(', '));
+
+  return { copyrightYear, generator, templateHints: uniqHints, signals, count: signals.length };
+}
+
 async function fetchServicesPage(app, homeMd, baseUrl) {
   let url = findServicesUrl(homeMd, baseUrl);
   let via = 'link';
@@ -259,6 +301,7 @@ async function scrapeContent(targetUrl, { withServices = false } = {}) {
     messagingSamples,
     ethicsFlags,
     trustSignals,
+    ageSignals: detectAgeSignals(md, html),
     wordCount: md.split(/\s+/).length,
   };
 
@@ -376,6 +419,25 @@ async function auditOne(targetUrl, { competitorUrl } = {}) {
   return { domain: domainOf(targetUrl), content, vitals };
 }
 
+// ── Etap 0: podgląd (tylko screenshot, bez Firecrawl ani Lighthouse) ──
+// Kwalifikacja wizualna leada ZANIM spalimy limit Firecrawl na pełny audyt. ~5–10 s.
+async function peekScreenshot(targetUrl) {
+  const outDir = outDirFor(targetUrl);
+  const { chromium } = require('playwright');
+  const browser = await chromium.launch();
+  const shot = path.join(outDir, 'screenshot-peek.png');
+  try {
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+    const page = await ctx.newPage();
+    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await page.screenshot({ path: shot, fullPage: true });
+    await ctx.close();
+  } finally {
+    await browser.close();
+  }
+  return { outDir, shot };
+}
+
 // ── CSV (nazwa,url) — split na OSTATNIM przecinku, bo url nie zawiera przecinka,
 //    a nazwa kancelarii może (np. „RS Legal (Radzikowski, Szubielska...)"). ──
 function parseCsv(text) {
@@ -435,6 +497,24 @@ async function runBatch(csvPath) {
     const csvPath = process.argv[3];
     if (!csvPath) { console.error('Użycie: node scrape.js --batch <lista.csv>'); process.exit(1); }
     await runBatch(csvPath);
+    return;
+  }
+
+  // Etap 0 — podgląd wizualny bez pełnego audytu (oszczędza limit Firecrawl).
+  if (arg1 === '--peek') {
+    const raw = process.argv[3];
+    if (!raw) { console.error('Użycie: node scrape.js --peek <url>'); process.exit(1); }
+    const url = /^https?:\/\//i.test(raw) ? raw : 'https://' + raw;
+    console.log(`Etap 0 — podgląd (bez Firecrawl): ${url}`);
+    try {
+      const { shot } = await peekScreenshot(url);
+      console.log(`    ✓ screenshot → ${path.relative(path.join(__dirname, '..'), shot)}`);
+      console.log('Teraz Claude ogląda screenshot i odpowiada na 5 pytań Etapu 0 (kryteria-audytu.md → „Ocena leada").');
+      console.log('Jeśli werdykt 🔴 (odpuść) — zapisz lead-skip.txt i NIE uruchamiaj pełnego scrape.');
+    } catch (e) {
+      console.error('    ✗ Podgląd nieudany:', e.message);
+      process.exit(1);
+    }
     return;
   }
 

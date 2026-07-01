@@ -72,5 +72,7 @@ node batch-report.js lista.csv   # → output/batch-fragments.csv
 
 1. **Ton: fakt → konsekwencja → rozwiązanie.** Nigdy „beznadziejna strona" ani ocena kompetencji.
 2. **Każda ocena z danych** — z pola w `content.json`/`vitals.json` lub screenshota, nie z pamięci.
+   - `content.json` opisuje tylko **stronę główną**. Specjalizacja może być na podstronie usług — scraper dociąga ją automatycznie do `servicesPage`. Nie oceniaj „brak specjalizacji" bez sprawdzenia `servicesPage.practiceAreaCount`.
+   - Screenshot ma pierwszeństwo nad surowym licznikiem scrapera: `ctaCount=0` nie oznacza „brak CTA", jeśli na screenshocie widać przycisk.
 3. **Audyt publiczny = anonimizuj** nazwę kancelarii.
 4. **Nie zmieniaj `benchmark-pl-law.json` ręcznie.**

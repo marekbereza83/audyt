@@ -34,7 +34,7 @@ Klucz Firecrawl wczytywany z `scripts/.env` (plik gitignorowany). Jeden scrape t
 Na żądanie „zaudytuj https://..." wykonaj pełny workflow (`SKILL.md`) i zwróć:
 - `output/<domena>/audyt.md` — raport po polsku w tonie merytorycznym
 - `output/<domena>/audyt-dane.json` — dane strukturalne (8 wymiarów + score)
-- `output/<domena>/mail-fragment.txt` — 2–4 zdania gotowe do cold maila (≤400 znaków)
+- `output/<domena>/mail-fragment.txt` — 2–4 zdania gotowe do cold maila (≤400 znaków, zawsze generowane)
 - screenshoty desktop i mobile
 
 Po audycie zapytaj do czego jest potrzebny (cold mail / blog / wiedza) — to zmienia finalne sformułowanie (publiczny = anonimizuj nazwę kancelarii).

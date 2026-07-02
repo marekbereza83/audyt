@@ -93,21 +93,4 @@ Największy potencjał: [1 zdanie — co da największy zwrot]. Pozostałe zmian
 
 ---
 
-## Ocena leada
-
-> **Sekcja wewnętrzna (FORMA) — NIGDY nie wysyłaj jej kancelarii.** Kwalifikacja: czy warto pisać. Ton biznesowy, każda ocena z danych. Logika: `kryteria-audytu.md` → „Ocena leada".
-
-**Werdykt:** [🟢 PISZ / 🔴 ODPUŚĆ]
-**Priorytet:** [⭐⭐⭐⭐⭐ PISZ DZISIAJ / ⭐⭐⭐⭐ PISZ / ⭐⭐⭐ JEŚLI MASZ CZAS / ⭐⭐ TYLKO PO TELEFONIE / ⭐ ODPUŚĆ]
-**Potencjał:** [A / B / C] — [1 zdanie uzasadnienia]
-
-**Sygnały kupna** (tylko potwierdzone danymi — puste = brak):
-- [✓ prowadzi blog / ✓ inwestuje w SEO (JSON-LD) / ✓ kancelaria wieloosobowa / ✓ specjalizacja dla firm / ✓ formularz / itd.]
-
-**Dostępność kontaktu:** [osobisty email `imie.nazwisko@` / `biuro@` / brak — czerwony flag]
-
-**Uzasadnienie:** [1–2 zdania. Dla PISZ: co konkretnie widać (rozdźwięk, sygnały, szansa sprzedaży). Dla ODPUŚĆ: powód odrzucenia.]
-
----
-
-> **Notatka (nie część raportu):** Fragment do maila generowany jest osobno do `mail-fragment.txt` — bierze najważniejszy problem z sekcji „Mówiąc wprost", skrócony do 2–4 zdań (maks. ~400 znaków, czysty tekst). W trybie wsadowym wszystkie fragmenty trafiają do `output/batch-fragments.csv` (`node batch-report.js <lista.csv>`).
+> **Notatka (nie część raportu):** Fragment do maila zapisywany jest osobno do `mail-fragment.txt` — najważniejszy problem z sekcji „Mówiąc wprost", skrócony do 2–4 zdań (maks. ~400 znaków, czysty tekst, bez nagłówków). W trybie wsadowym wszystkie fragmenty trafiają do `output/batch-fragments.csv` (`node batch-report.js <lista.csv>`).

@@ -82,26 +82,32 @@ Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8
 
 ### Krok 5 — Ocena leada (warstwa biznesowa)
 
-Po wygenerowaniu audytu odpowiedz na **5 pytań kwalifikujących** z `reference/kryteria-audytu.md` → „Ocena leada":
-- **P1 ⭐ (waga podwójna)** — kancelaria zamożniejsza niż jej strona? (rozdźwięk status ⇄ strona)
-- **P2** — strona starsza niż 6–7 lat? (`content.json.ageSignals` + `vitals` https/mobile)
-- **P3** — budżet 5–10 tys. zł bez problemu?
-- **P4** — nowa strona poprawi pierwszy kontakt?
-- **P5** — brak świeżych inwestycji w stronę?
+Po wygenerowaniu audytu odpowiedz na jedno pytanie z `reference/kryteria-audytu.md` → „Ocena leada":
 
-Każda odpowiedź `tak` / `nie` / `za-malo-danych` + jedno zdanie z danych. Policz „tak" (**P1 ×2**) → werdykt `pisz` / `pisz-inaczej` / `odpusc` (logika w kryteriach). Dane pomocnicze (luka ze score, dostępność kontaktu) to kontekst, nie osobny werdykt.
+> **Czy właściciel tej kancelarii ma motywację, budżet i uzasadnienie biznesowe, aby zainwestować w nową stronę?**
+
+Werdykt to **wyłącznie `pisz` albo `odpusc`** — żadnego pośredniego. Przyznaj 🟢 **PISZ** gdy większość sygnałów wskazuje na realną szansę sprzedaży: wysoki potencjał biznesowy kancelarii + wyraźny rozdźwięk (kancelaria lepsza niż strona) + sygnały inwestowania w marketing + dostępny kontakt. Przyznaj 🔴 **ODPUŚĆ** gdy szansa jest niska lub brak kontaktu (brak kontaktu = ODPUŚĆ zawsze).
+
+Wylicz też **ranking gwiazdkowy** (1–5⭐) i **kategorię potencjału** (A/B/C) wg sekcji „Ranking gwiazdkowy" i „Kategoria potencjału" w kryteriach. Wypisz `sygnalyKupna` — tylko sygnały **potwierdzone danymi** z listy „Sygnały kupna" (puste = brak).
 
 Zapisz wynik w **dwóch** miejscach:
-- `audyt-dane.json` → obiekt `ocenaLeada`: `{ werdykt, pyt1_rozdzwiek, pyt2_wiek, pyt3_budzet, pyt4_poprawa, pyt5_zaniedbanie, kontakt, rekomendacja, wymagaOcenyScreenshot }` (pyt* = 1 zdanie z danych; `wymagaOcenyScreenshot: true` gdy P1 niejednoznaczne i wymaga oka na screenshot).
-- `audyt.md` → sekcja `## Ocena leada` (z szablonu, tabela 5 pytań) — **wewnętrzna, nigdy nie idzie do kancelarii**.
-
-Ton biznesowy, nie oceniający. Brak danych = `za-malo-danych`, nie zgadywanie — zwłaszcza P1 i P3 (jeśli niejednoznaczne, oznacz do ręcznej oceny zamiast strzelać).
+- `audyt-dane.json` → obiekt `ocenaLeada`: `{ werdykt, gwiazdki, potencjal, sygnalyKupna, kontakt, rekomendacja }` (`gwiazdki` = liczba 1–5; `potencjal` = „A"/„B"/„C"; `sygnalyKupna` = tablica; `rekomendacja` = 1–2 zdania uzasadnienia, dla ODPUŚĆ = powód, dla PISZ = co konkretnie widać).
+- `audyt.md` → sekcja `## Ocena leada` (z szablonu) — **wewnętrzna, nigdy nie idzie do kancelarii**.
 
 ### Krok 6 — Fragment do cold maila (zależny od werdyktu)
 
-**Jeśli werdykt = `odpusc` (🔴):** NIE generuj `mail-fragment.txt` — nie ma sensu pisać. Zamiast tego zapisz `output/<domena>/lead-skip.txt` z jednym zdaniem: powód odpuszczenia (np. „Brak jakiegokolwiek kontaktu — nie ma do kogo pisać" albo „Strona świeża, score 84 — nie ma czego oferować"). Pomiń resztę tego kroku.
+**Jeśli werdykt = `odpusc` (🔴):** NIE generuj maila. Zapisz `output/<domena>/lead-skip.txt` z jednym zdaniem: powód odpuszczenia (np. „Brak kontaktu — nie ma do kogo pisać" albo „Strona świeża, score 84 — nie ma czego oferować"). Pomiń resztę tego kroku.
 
-**W przeciwnym razie (`pisz` / `pisz-inaczej`):** zapisz `output/<domena>/mail-fragment.txt` — **2–4 zdania** (maks. ~400 znaków), czysty tekst gotowy do wklejenia w mail. To **skrócona** wersja sekcji „Mówiąc wprost", nie cały akapit. Format: jedna obserwacja (najważniejszy problem) → jedna konsekwencja w języku klienta → jedno zdanie, że to szybka poprawka. Bez nagłówków i markdownu. Dla `pisz-inaczej` dostosuj otwarcie wg „Rekomendowanego podejścia" z oceny leada (np. nie zaczynaj od listy problemów, jeśli strona jest dobra).
+**Jeśli werdykt = `pisz` (🟢):** wygeneruj **dwa pliki**:
+
+1. `output/<domena>/mail-fragment.txt` — **2–4 zdania** (maks. ~400 znaków), czysty tekst do wklejenia w tracker. Format: jedna obserwacja (najważniejszy problem) → konsekwencja w języku klienta → jedno zdanie, że to szybka poprawka lub realny zysk. Bez nagłówków i markdownu.
+
+2. `output/<domena>/mail.txt` — pełny pierwszy mail, format:
+   ```
+   Temat: [temat maila — konkretny, nie generyczny]
+
+   [Treść maila zgodna ze stylem FORMA: personalizacja (imię/nazwisko adwokata), jedna konkretna obserwacja ze strony, wyjaśnienie skutku dla klientów kancelarii, propozycja wartości (nowa strona = więcej kontaktów), CTA do rozmowy. Ton: merytoryczny, partnerski — nie handlowy. Długość: 5–8 zdań.]
+   ```
 
 **Wybór problemu:** jeśli kilka ma priorytet 🔴 wysoki, wybierz ten o największym wpływie na **pierwsze wrażenie klienta**. HTTPS i mobile mają pierwszeństwo przed tym, czego klient nie widzi (np. brak JSON-LD).
 
@@ -121,7 +127,9 @@ Gdy trzeba zaudytować całą listę kancelarii naraz (np. z trackera), zamiast 
 1. **Wejście** — CSV z kolumnami `nazwa,url` (eksport z trackera — patrz `README.md`).
 2. **Scrape wszystkich** — `node scripts/scrape.js --batch lista.csv`. Iteruje po liście, **max 3 strony równolegle**, loguje postęp `[i/total] Audytuję ...`. Dla każdej zapisuje `output/<domena>/` jak w trybie pojedynczym. Błąd jednej strony (nie istnieje, timeout) **nie przerywa** reszty — zapisuje `scrape-error.txt` i leci dalej.
 3. **Audyty per kancelaria** — przejdź po kolei przez katalogi `output/<domena>/` i dla każdej wykonaj Kroki 2–6 (ocena → `audyt.md` + `audyt-dane.json` + ocena leada + `mail-fragment.txt` **lub** `lead-skip.txt` gdy werdykt 🔴). To krok Claude, nie skryptu — `scrape.js` zbiera tylko dane.
-4. **Zbiorczy raport** — `node scripts/batch-report.js lista.csv`. Zbiera dane do `output/batch-fragments.csv` (kolumny: `nazwa,url,werdykt,pyt1_rozdzwiek,powod,fragment_do_maila,score,priorytet_glowny`), gotowe do wklejenia do trackera. **Sortuj po kolumnie `werdykt`** (`1-PISZ` → `2-PISZ-INACZEJ` → `3-ODPUSC`) — to ustawia kolejność pracy: najpierw leady do pisania. Leady 🔴 mają pusty `fragment_do_maila` i powód w `powod`. Strony, które zawiodły scrape, mają `BŁĄD: <powód>`.
+4. **Zbiorczy raport** — `node scripts/batch-report.js lista.csv`. Zbiera dane do dwóch plików:
+   - `output/batch-fragments.csv` — tylko udane audyty (kolumny: `gwiazdki,nazwa,werdykt,potencjal_ABC,url,sygnaly_kupna,dlaczego_pisac,fragment_do_maila,score,priorytet_glowny`). Plik jest **wstępnie posortowany**: gwiazdki ↓, potencjał A→C — pierwszy wiersz to najlepszy lead na dziś.
+   - `output/batch-nieudane.csv` — strony, których nie udało się pobrać (`nazwa,url,powod_bledu,data_proby`). Do ręcznej weryfikacji. Batch **nie ponawia** nieudanych automatycznie.
 
 **Warunek wstępny:** batch na **prawdziwych** kancelariach z trackera dopiero po przejściu kalibracji na stronie testowej (`zla-strona-testowa-spec.md`). Jeśli kalibracja nie przeszła — zatrzymaj się i o tym przypomnij.
 

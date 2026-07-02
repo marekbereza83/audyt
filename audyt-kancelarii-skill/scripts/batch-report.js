@@ -1,20 +1,23 @@
 #!/usr/bin/env node
 /**
- * batch-report.js — zbiera wyniki audytów wsadowych do jednego CSV gotowego do trackera.
+ * batch-report.js — zbiera wyniki audytów wsadowych do CSV gotowego do trackera.
  * Użycie: node batch-report.js <lista.csv>     (ten sam CSV co `scrape.js --batch`)
  *
  * Dla każdej kancelarii z CSV czyta output/<domena>/:
- *   - audyt-dane.json   → score + priorytet główny + ocenaLeada (werdykt)
- *   - mail-fragment.txt → gotowy fragment do maila (gdy werdykt pisz/pisz-inaczej)
- *   - lead-skip.txt     → (gdy werdykt odpusc) powód odpuszczenia
- *   - scrape-error.txt  → (gdy strona zawiodła) powód
+ *   - audyt-dane.json   → score + priorytet + ocenaLeada (werdykt, gwiazdki, potencjał)
+ *   - mail-fragment.txt → 2–4 zdania do trackera (gdy pisz)
+ *   - mail.txt          → pełny pierwszy mail z tematem (gdy pisz)
+ *   - lead-skip.txt     → powód odpuszczenia (gdy odpusc)
+ *   - scrape-error.txt  → (gdy strona zawiodła) powód — trafia do batch-nieudane.csv
  *
- * Wynik: output/batch-fragments.csv
- *   kolumny: nazwa,url,werdykt,pyt1_rozdzwiek,powod,fragment_do_maila,score,priorytet_glowny
- * z BOM UTF-8 i CRLF — Excel otworzy polskie znaki poprawnie. Sortuj po `werdykt`
- * (1-PISZ → 2-PISZ-INACZEJ → 3-ODPUSC), w drugiej kolejności po `pyt1_rozdzwiek` — to ustawia
- * kolejność pracy: najpierw leady z rozdźwiękiem (1-tak > 2-za-malo-danych > 3-nie). Leady odpuszczone mają pusty `fragment_do_maila`
- * i powód w `powod`.
+ * Wyniki:
+ *   output/batch-fragments.csv  — tylko udane audyty
+ *     kolumny: gwiazdki,nazwa,werdykt,potencjal_ABC,url,sygnaly_kupna,dlaczego_pisac,
+ *              fragment_do_maila,score,priorytet_glowny
+ *     posortowane: gwiazdki ↓, potencjal A→C
+ *
+ *   output/batch-nieudane.csv   — nieudane scrapy (do ręcznej weryfikacji)
+ *     kolumny: nazwa,url,powod_bledu,data_proby
  */
 
 const fs = require('fs');
@@ -23,7 +26,7 @@ const path = require('path');
 const csvPath = process.argv[2];
 if (!csvPath) { console.error('Użycie: node batch-report.js <lista.csv>'); process.exit(1); }
 
-// ── helpery (spójne ze scrape.js) ───────────────────────────────────
+// ── helpery (spójne ze scrape.js) ────────────────────────────────────
 function domainOf(u) {
   return u.replace(/^https?:\/\//, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
 }
@@ -43,13 +46,14 @@ function parseCsv(text) {
     .map(r => ({ nazwa: r.nazwa, url: /^https?:\/\//i.test(r.url) ? r.url : 'https://' + r.url }));
 }
 
+const SEP = ';'; // średnik — domyślny separator polskiego Excela
+
 function csvEscape(v) {
   const s = String(v == null ? '' : v);
-  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  return /[";,\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
 // Główny priorytet = wymiar o statusie 'brak' i najwyższej wadze (najmocniej tnie konwersję).
-// Jak nic nie jest 'brak' — najcięższy 'do-poprawy'. Jak strona zdrowa — informacja o tym.
 function priorytetGlowny(dane) {
   const dims = Array.isArray(dane.wymiary) ? dane.wymiary : [];
   const byWaga = (a, b) => (b.waga || 0) - (a.waga || 0);
@@ -60,80 +64,140 @@ function priorytetGlowny(dane) {
   return 'brak krytycznych — strona w dobrym stanie';
 }
 
-// Werdykt oceny leada → etykieta z prefiksem 1/2/3, by sort w Excelu = kolejność pracy.
-const WERDYKT_LABEL = { 'pisz': '1-PISZ', 'pisz-inaczej': '2-PISZ-INACZEJ', 'odpusc': '3-ODPUSC' };
+// Werdykt → etykieta z prefiksem (sort w Excelu = kolejność pracy).
+const WERDYKT_LABEL = { 'pisz': '1-PISZ', 'odpusc': '2-ODPUSC' };
 function werdyktLabel(oc) {
   if (!oc || !oc.werdykt) return '';
   return WERDYKT_LABEL[oc.werdykt] || oc.werdykt;
 }
-// Prefiks 1/2/3 przed wartością pyt1_rozdzwiek → Excel sort = kolejność pracy (tak → za-malo-danych → nie).
-function sortPrefixPyt1(s) {
-  if (!s) return '';
-  if (/^tak\b/i.test(s)) return '1-' + s;
-  if (/^za-malo-danych\b/i.test(s)) return '2-' + s;
-  if (/^nie\b/i.test(s)) return '3-' + s;
-  return s;
+
+// Gwiazdki jako numer (do sortowania) i czytelna etykieta (do CSV).
+function gwiazdkiNum(oc) {
+  if (!oc || !oc.gwiazdki) return 0;
+  return parseInt(oc.gwiazdki, 10) || 0;
 }
-// Krótki powód do CSV — rekomendacja, a w razie braku skrót z odpowiedzi na pytania.
-function powodWerdyktu(oc) {
+function gwiazdkiLabel(oc) {
+  const n = gwiazdkiNum(oc);
+  return n ? String(n) + '⭐' : '';
+}
+
+// Potencjał A/B/C.
+function potencjalLabel(oc) {
+  if (!oc || !oc.potencjal) return '';
+  return String(oc.potencjal).toUpperCase();
+}
+
+// Sygnały kupna z tablicy → ciąg oddzielony " | ".
+function sygnalyKupna(oc) {
+  if (!oc || !Array.isArray(oc.sygnalyKupna) || !oc.sygnalyKupna.length) return '';
+  return oc.sygnalyKupna.join(' | ');
+}
+
+// Dlaczego pisać — rekomendacja lub skrót z pytań.
+function dlaczegoPisac(oc) {
   if (!oc) return '';
   if (oc.rekomendacja) return oc.rekomendacja;
   return [oc.pyt1_rozdzwiek, oc.pyt3_budzet, oc.kontakt].filter(Boolean).join(' · ');
 }
 
-// ── zbieranie ───────────────────────────────────────────────────────
-const rows = parseCsv(fs.readFileSync(csvPath, 'utf8'));
-const header = ['nazwa', 'url', 'werdykt', 'pyt1_rozdzwiek', 'powod', 'fragment_do_maila', 'score', 'priorytet_glowny'];
-const lines = [header.map(csvEscape).join(',')];
+// Skróć komunikat błędu scrape do jednej czytelnej linii.
+function skrocBladScrape(tekst) {
+  if (!tekst) return 'nieznany błąd';
+  if (/408|timeout|timed out/i.test(tekst)) return 'timeout — strona wolna lub ciężka';
+  if (/404|not found/i.test(tekst)) return '404 — strona niedostępna';
+  if (/403|forbidden/i.test(tekst)) return '403 — dostęp zablokowany';
+  if (/ECONNREFUSED|connection refused/i.test(tekst)) return 'brak połączenia z serwerem';
+  return tekst.split('\n')[0].replace(/^Failed to scrape URL\.\s*/i, '').slice(0, 120);
+}
 
-let ok = 0, odpuszczone = 0, bledy = 0;
-for (const row of rows) {
+// ── zbieranie ────────────────────────────────────────────────────────
+const inputRows = parseCsv(fs.readFileSync(csvPath, 'utf8'));
+const today = new Date().toISOString().slice(0, 10);
+
+const mainRows = [];   // udane audyty
+const failedRows = []; // błędy scrape
+
+let ok = 0, odpuszczone = 0;
+
+for (const row of inputRows) {
   const dir = path.join(__dirname, '..', 'output', domainOf(row.url));
   const danePath = path.join(dir, 'audyt-dane.json');
   const fragPath = path.join(dir, 'mail-fragment.txt');
   const skipPath = path.join(dir, 'lead-skip.txt');
-  const errPath = path.join(dir, 'scrape-error.txt');
+  const errPath  = path.join(dir, 'scrape-error.txt');
 
-  let fragment = '', score = '', priorytet = '', werdykt = '', pyt1 = '', powod = '';
-
-  if (fs.existsSync(danePath)) {
-    try {
-      const dane = JSON.parse(fs.readFileSync(danePath, 'utf8'));
-      score = dane.scoreOgolny != null ? dane.scoreOgolny : '';
-      priorytet = priorytetGlowny(dane);
-      const oc = dane.ocenaLeada;
-      werdykt = werdyktLabel(oc);
-      pyt1 = oc && oc.pyt1_rozdzwiek ? sortPrefixPyt1(oc.pyt1_rozdzwiek) : '';
-      powod = powodWerdyktu(oc);
-
-      if (oc && oc.werdykt === 'odpusc') {
-        // 🔴 — fragmentu celowo nie ma; powód z lead-skip.txt (gdy brak rekomendacji).
-        fragment = '';
-        if (!powod && fs.existsSync(skipPath)) powod = fs.readFileSync(skipPath, 'utf8').trim();
-        odpuszczone++;
-      } else {
-        fragment = fs.existsSync(fragPath)
-          ? fs.readFileSync(fragPath, 'utf8').trim()
-          : 'BŁĄD: brak mail-fragment.txt (audyt niedokończony)';
-        if (!fragment.startsWith('BŁĄD')) ok++; else bledy++;
-      }
-    } catch (e) {
-      fragment = 'BŁĄD: niepoprawny audyt-dane.json — ' + e.message;
-      bledy++;
-    }
-  } else if (fs.existsSync(errPath)) {
-    fragment = 'BŁĄD: ' + fs.readFileSync(errPath, 'utf8').trim();
-    bledy++;
-  } else {
-    fragment = 'BŁĄD: brak danych audytu (scrape nie wykonany dla tej strony?)';
-    bledy++;
+  // ── błąd scrape ─────────────────────────────────────────────────
+  if (!fs.existsSync(danePath)) {
+    const powodBledu = fs.existsSync(errPath)
+      ? skrocBladScrape(fs.readFileSync(errPath, 'utf8').trim())
+      : 'brak danych audytu — scrape nie wykonany lub nieudany';
+    failedRows.push({ nazwa: row.nazwa, url: row.url, powodBledu, dataPróby: today });
+    continue;
   }
 
-  lines.push([row.nazwa, row.url, werdykt, pyt1, powod, fragment, score, priorytet].map(csvEscape).join(','));
+  // ── udany audyt ──────────────────────────────────────────────────
+  let fragment = '', score = '', priorytet = '', werdykt = '';
+  let gwiazdki = 0, potencjal = '', sygnaly = '', dlaczego = '';
+
+  try {
+    const dane = JSON.parse(fs.readFileSync(danePath, 'utf8'));
+    score    = dane.scoreOgolny != null ? dane.scoreOgolny : '';
+    priorytet = priorytetGlowny(dane);
+    const oc = dane.ocenaLeada || null;
+
+    werdykt  = werdyktLabel(oc);
+    gwiazdki = gwiazdkiNum(oc);
+    potencjal = potencjalLabel(oc);
+    sygnaly  = sygnalyKupna(oc);
+    dlaczego = dlaczegoPisac(oc);
+
+    if (oc && oc.werdykt === 'odpusc') {
+      fragment = '';
+      if (!dlaczego && fs.existsSync(skipPath)) dlaczego = fs.readFileSync(skipPath, 'utf8').trim();
+      odpuszczone++;
+    } else {
+      // pisz — fragment do trackera (mail-fragment.txt); pełny mail w mail.txt
+      fragment = fs.existsSync(fragPath)
+        ? fs.readFileSync(fragPath, 'utf8').trim()
+        : 'BŁĄD: brak mail-fragment.txt (audyt niedokończony)';
+      ok++;
+    }
+  } catch (e) {
+    fragment = 'BŁĄD: niepoprawny audyt-dane.json — ' + e.message;
+    ok++;
+  }
+
+  mainRows.push({
+    gwiazdkiNum: gwiazdki,
+    potencjalSort: potencjal || 'Z',   // brak potencjału sortuje na końcu
+    cols: [gwiazdkiLabel({ gwiazdki }), row.nazwa, werdykt, potencjal, row.url,
+           sygnaly, dlaczego, fragment, score, priorytet],
+  });
 }
 
-const outPath = path.join(__dirname, '..', 'output', 'batch-fragments.csv');
-// BOM + CRLF → Excel czyta UTF-8 (polskie znaki) i wiersze poprawnie.
-fs.writeFileSync(outPath, '﻿' + lines.join('\r\n') + '\r\n', 'utf8');
+// ── sortowanie: gwiazdki ↓, potencjal A→C ───────────────────────────
+mainRows.sort((a, b) => {
+  if (b.gwiazdkiNum !== a.gwiazdkiNum) return b.gwiazdkiNum - a.gwiazdkiNum;
+  return a.potencjalSort.localeCompare(b.potencjalSort);
+});
 
-console.log(`Zapisano ${rows.length} wierszy (${ok} do pisania, ${odpuszczone} odpuszczonych, ${bledy} z błędem) → output/batch-fragments.csv`);
+// ── zapis batch-fragments.csv ────────────────────────────────────────
+const mainHeader = ['gwiazdki', 'nazwa', 'werdykt', 'potencjal_ABC', 'url',
+                    'sygnaly_kupna', 'dlaczego_pisac', 'fragment_do_maila', 'score', 'priorytet_glowny'];
+const mainLines = [mainHeader.map(csvEscape).join(SEP),
+                   ...mainRows.map(r => r.cols.map(csvEscape).join(SEP))];
+
+const outPath = path.join(__dirname, '..', 'output', 'batch-fragments.csv');
+fs.writeFileSync(outPath, '﻿' + mainLines.join('\r\n') + '\r\n', 'utf8');
+
+// ── zapis batch-nieudane.csv ─────────────────────────────────────────
+if (failedRows.length) {
+  const failHeader = ['nazwa', 'url', 'powod_bledu', 'data_proby'];
+  const failLines = [failHeader.map(csvEscape).join(SEP),
+                     ...failedRows.map(r => [r.nazwa, r.url, r.powodBledu, r.dataPróby].map(csvEscape).join(SEP))];
+  const failPath = path.join(__dirname, '..', 'output', 'batch-nieudane.csv');
+  fs.writeFileSync(failPath, '﻿' + failLines.join('\r\n') + '\r\n', 'utf8');
+  console.log(`Nieudane scrapy: ${failedRows.length} → output/batch-nieudane.csv (do ręcznej weryfikacji, nie ponawiaj automatycznie)`);
+}
+
+console.log(`Zapisano ${mainRows.length} wierszy (${ok} PISZ, ${odpuszczone} ODPUŚĆ) → output/batch-fragments.csv`);

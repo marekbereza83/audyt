@@ -95,23 +95,18 @@ Największy potencjał: [1 zdanie — co da największy zwrot]. Pozostałe zmian
 
 ## Ocena leada
 
-> **Sekcja wewnętrzna (FORMA) — NIGDY nie wysyłaj jej kancelarii.** Kwalifikacja: czy warto pisać cold mail. Ton biznesowy, każda odpowiedź z danych. Progi i logika: `kryteria-audytu.md` → „Ocena leada".
+> **Sekcja wewnętrzna (FORMA) — NIGDY nie wysyłaj jej kancelarii.** Kwalifikacja: czy warto pisać. Ton biznesowy, każda ocena z danych. Logika: `kryteria-audytu.md` → „Ocena leada".
 
-**Werdykt:** [🟢 PISZ TERAZ / 🟡 PISZ INACZEJ / 🔴 ODPUŚĆ] — [liczba „tak", P1 ×2]
+**Werdykt:** [🟢 PISZ / 🔴 ODPUŚĆ]
+**Priorytet:** [⭐⭐⭐⭐⭐ PISZ DZISIAJ / ⭐⭐⭐⭐ PISZ / ⭐⭐⭐ JEŚLI MASZ CZAS / ⭐⭐ TYLKO PO TELEFONIE / ⭐ ODPUŚĆ]
+**Potencjał:** [A / B / C] — [1 zdanie uzasadnienia]
 
-[Jeśli P1 = `za-malo-danych` z powodu niejednoznacznych sygnałów statusu — napisz tu wprost: „⚠️ P1 wymaga oceny na screenshocie".]
+**Sygnały kupna** (tylko potwierdzone danymi — puste = brak):
+- [✓ prowadzi blog / ✓ inwestuje w SEO (JSON-LD) / ✓ kancelaria wieloosobowa / ✓ specjalizacja dla firm / ✓ formularz / itd.]
 
-| # | Pytanie | Odpowiedź | Uzasadnienie (z danych) |
-|---|---|---|---|
-| **P1 ⭐** | Kancelaria zamożniejsza niż jej strona? (rozdźwięk, waga ×2) | tak / nie / za mało danych | [status vs score — 1 zdanie] |
-| P2 | Strona starsza niż 6–7 lat? | tak / nie / za mało danych | [ageSignals + https/mobile] |
-| P3 | Budżet 5–10 tys. zł bez problemu? | tak / nie / za mało danych | [specjalizacja/zespół/miasto] |
-| P4 | Nowa strona poprawi pierwszy kontakt? | tak / nie | [problemy pierwszego wrażenia z audytu] |
-| P5 | Brak świeżych inwestycji w stronę? | tak / nie / za mało danych | [JSON-LD/SEO/copyright/HTTPS] |
+**Dostępność kontaktu:** [osobisty email `imie.nazwisko@` / `biuro@` / brak — czerwony flag]
 
-**Dostępność kontaktu:** [osobisty email `imie.nazwisko@` / `biuro@` (zginie w sekretariacie) / brak — czerwony flag]
-
-**Rekomendowane podejście:** [dla 🟢: „standardowy cold mail z audytem". Dla 🟡: JAKIE inne podejście (np. „strona dobra — zaproponuj X zamiast listy problemów" lub „bardzo słaba — zacznij pytaniem, nie audytem"). Dla 🔴: powód odpuszczenia.]
+**Uzasadnienie:** [1–2 zdania. Dla PISZ: co konkretnie widać (rozdźwięk, sygnały, szansa sprzedaży). Dla ODPUŚĆ: powód odrzucenia.]
 
 ---
 

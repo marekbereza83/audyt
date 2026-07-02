@@ -172,44 +172,86 @@ Każda rekomendacja w raporcie („Jak bym to rozwiązał") dostaje oznaczenie *
 
 ## Ocena leada (warstwa biznesowa — dla FORMA, nie dla kancelarii)
 
-Po ocenie 8 wymiarów odpowiedz na osobne pytanie: **czy w ogóle warto wysłać tej kancelarii cold mail?** Nie każda strona ze słabym score to dobry lead. To **wewnętrzna kwalifikacja** — trafia do `audyt.md` i `audyt-dane.json`, **nigdy do `mail-fragment.txt`**.
+Po ocenie 8 wymiarów odpowiedz na jedno pytanie: **czy warto poświęcić czas na przygotowanie spersonalizowanego maila z ofertą nowej strony?** To **wewnętrzna kwalifikacja** — trafia do `audyt.md` i `audyt-dane.json`, **nigdy do `mail-fragment.txt` ani `mail.txt`**.
 
-Rdzeń to **5 pytań kwalifikujących**. Wszystkie mierzą jedno: **rozdźwięk między statusem kancelarii a jakością/wiekiem strony oraz zaniedbanie**. Ton biznesowy, nie oceniający („mały budżet prawdopodobny", nie „ta kancelaria jest biedna"). Każda odpowiedź z danych; brak danych = `za-malo-danych`, nie zgadywanie — zwłaszcza P1 i P3.
+Pytanie nie brzmi „czy ta strona jest dobra?" — brzmi: **„czy właściciel tej kancelarii ma motywację, budżet i uzasadnienie biznesowe, aby zainwestować w nową stronę?"**
 
-Te 5 pytań pełni **dwie role, ta sama logika w dwóch głębokościach**:
-- **Etap 0 (kwalifikacja wizualna)** — zgrubne odpowiedzi z samego screenshota / strony głównej **przed** pełnym audytem (`node scrape.js --peek <url>`). Odsiewa oczywiste 🔴, oszczędza czas i limit Firecrawl. Jeśli od razu 🔴 → zapisz `lead-skip.txt` i nie scrapuj (patrz `SKILL.md` Krok 0).
-- **Krok 5 (pełna ocena)** — udokumentowane odpowiedzi po audycie, na danych z `content.json`/`vitals.json`/`servicesPage`/`ageSignals`. To ostateczny werdykt.
+Masz dwie opcje:
 
-### 5 pytań kwalifikujących
+### 🟢 PISZ (`werdykt: "pisz"`)
 
-Dla każdego: odpowiedź `tak` / `nie` / `za-malo-danych` + jedno zdanie uzasadnienia z danych.
+Przyznaj, jeżeli większość poniższych warunków jest spełniona:
+- kancelaria ma wysoki potencjał biznesowy (specjalizacja, zespół, miasto, obsługa firm),
+- widać wyraźny rozdźwięk między poziomem kancelarii a jakością strony,
+- właściciel inwestuje w rozwój kancelarii (SEO, blog, zdjęcia, marketing, aktualności),
+- istnieje realna szansa sprzedaży — jest kontakt, jest wstyd, jest budżet,
+- przygotowanie spersonalizowanego maila jest warte poświęconego czasu.
 
-**P1 ⭐ (waga PODWÓJNA — najważniejsze) — Czy kancelaria wygląda na zamożniejszą niż jej strona?**
-Rozdźwięk = idealny target: jest budżet i jest wstyd. Sygnały statusu: specjalizacja biznesowa (corporate/M&A/podatki/gospodarcze z `servicesPage.practiceAreas`), „i Wspólnicy"/zespół (`trustSignals.team`), duże miasto (nazwa/tracker), klasa biura na zdjęciach (screenshot), prestiżowi klienci wymienieni w treści. Zestaw to ze score audytu: **wysoki status + score < 60 → `tak`** (mocny sygnał). Jeśli sygnały z danych niejednoznaczne → `za-malo-danych` i ustaw `wymagaOcenyScreenshot: true` („wymaga oka użytkownika na screenshot").
+Dla werdyktu **PISZ** wygeneruj w Kroku 6: `mail-fragment.txt` (2–4 zdania do trackera) + `mail.txt` (temat + pełny pierwszy mail).
 
-**P2 — Czy strona ma ponad 6–7 lat?**
-Ślady wieku łączą `content.json.ageSignals` (`copyrightYear` stary, `generator` np. „Joomla! 1.5", `templateHints` np. „templatemo") + `vitals.json` (`https = false`, `mobileFriendly = false`). Sygnały się sumują — **2+ ślady = prawdopodobnie `tak`**.
+### 🔴 ODPUŚĆ (`werdykt: "odpusc"`)
 
-**P3 — Czy właściciel prawdopodobnie wyda 5–10 tys. zł bez problemu?**
-„Bez problemu" = cena nie jest barierą decyzyjną. Sygnały: specjalizacja o wysokich stawkach (corporate, podatki, M&A, nieruchomości komercyjne), kancelaria wieloosobowa, duże miasto, obsługa klientów biznesowych. Za mało sygnałów → `za-malo-danych`, nie zgaduj.
+Przyznaj, jeżeli:
+- potencjał sprzedażowy jest niski (solo, małe miasto, brak specjalizacji, brak sygnałów inwestowania),
+- właściciel prawdopodobnie nie zainwestuje w nową stronę,
+- brak wyraźnego rozdźwięku między poziomem kancelarii a stroną (oboje słabe — spójne),
+- brak kontaktu w danych (`phone` + `email` puste, `hasForm = false`) — nie ma do kogo pisać,
+- przygotowanie spersonalizowanego maila nie jest warte czasu.
 
-**P4 — Czy nowa strona realnie poprawi pierwszy kontakt z klientem?**
-Wynik audytu konwersji. Problemy pierwszego wrażenia (HTTPS, mobile, szybkość, CTA, jasność specjalizacji) na liście 🔴/🟡 → `tak`, realnie poprawi. Strona już dobra, a problemy kosmetyczne → `nie` (mniejszy sens kontaktu o stronie). Użyj score + listy problemów wysokiego priorytetu.
+Podaj jedynie `rekomendacja` — 1–2 zdania dlaczego lead odrzucony. Nie generuj maila.
 
-**P5 — Czy właściciel prawdopodobnie nie inwestował w stronę ostatnio?**
-Brak śladów świeżej pracy: brak JSON-LD (`hasStructuredData = false`), brak optymalizacji SEO, stary `ageSignals.copyrightYear`, brak HTTPS. Nikt nie tknął strony od lat = otwarte drzwi. (Pokrywa się z P2, ale z perspektywy świeżości, nie wieku.)
+**Reguła rozstrzygająca:** brak kontaktu przebija wszystko → ODPUŚĆ.
 
-### Dane pomocnicze (kontekst do 5 pytań, nie osobny werdykt)
+### Dane pomocnicze (kontekst, nie osobny werdykt)
 
-- **Luka do naprawienia:** score 30–60 = najlepszy target; 80+ = odpuść stronę; < 25 = oznacz do ręcznej decyzji.
-- **Dostępność kontaktu:** bezpośredni email osobisty (`imie.nazwisko@`) łatwiejszy niż `kontakt@` / `biuro@` / formularz; brak kontaktu (`phone` + `email` puste, `hasForm = false`) = czerwony flag — nie ma jak/do kogo pisać.
+- **Luka do naprawienia:** score 30–65 = najlepszy target; 80+ = odpuść stronę; < 20 = oznacz do ręcznej decyzji.
+- **Dostępność kontaktu:** bezpośredni email osobisty (`imie.nazwisko@`) łatwiejszy niż `kontakt@` / `biuro@` / formularz.
+- **Sygnały inwestowania:** blog, JSON-LD/SEO, formularz, aktualności, zdjęcia profesjonalne, Google Ads — im więcej, tym wyższy priorytet.
 
-### Werdykt — segmentacja na podstawie 5 pytań
+---
 
-Policz odpowiedzi `tak` (**P1 liczy się PODWÓJNIE**). Przypisz:
+### Ranking gwiazdkowy (priorytet operacyjny — pole `gwiazdki`, 1–5)
 
-- 🟢 **PISZ TERAZ** (`werdykt: "pisz"`) — **P1 = tak ORAZ ≥3 z pozostałych = tak**, jest kontakt. Klasyczny rozdźwięk: zamożna kancelaria, zaniedbana strona, budżet jest. Standardowy cold mail z audytem.
-- 🟡 **PISZ INACZEJ** (`werdykt: "pisz-inaczej"`) — sygnały mieszane: P1 tak ale P3 nie (brak budżetu), **albo** strona bardzo dobra (P4 nie — zaproponuj inne podejście niż „masz problemy"), **albo** strona skrajnie zła (zacznij od pytania, nie od listy problemów). Podaj JAKIE podejście.
-- 🔴 **ODPUŚĆ** (`werdykt: "odpusc"`) — brak kontaktu, **lub** P3 wyraźnie nie (brak budżetu), **lub** strona świeża i dobra (P2/P5 nie + wysoki score). Podaj powód.
+Odpowiada na pytanie **„kiedy pisać"**, niezależnie od score technicznego. Priorytet = „czy właściciel kupi teraz".
 
-**Reguła rozstrzygająca:** brak kontaktu przebija wszystko → 🔴.
+| Gwiazdki | Etykieta | Kryteria |
+|---|---|---|
+| ⭐⭐⭐⭐⭐ | **PISZ DZISIAJ** | P1=tak + jest kontakt + `sygnalyKupna` ma ≥2 potwierdzonych sygnałów (aktywny inwestor: blog/SEO/JSON-LD/Ads) |
+| ⭐⭐⭐⭐ | **PISZ** | Rozdźwięk jest, kontakt jest, ale mniej sygnałów potwierdzających gotowość inwestycyjną |
+| ⭐⭐⭐ | **JEŚLI MASZ CZAS** | Sygnały mieszane, mniejszy potencjał inwestycyjny lub mało danych o statusie — nic nie wyklucza, ale priorytet niski |
+| ⭐⭐ | **TYLKO PO TELEFONIE** | Potencjał niepewny, wymaga ręcznej weryfikacji przed napisaniem (np. brak kontaktu w danych, ale lead wygląda obiecująco) |
+| ⭐ | **ODPUŚĆ** | Werdykt 🔴 z mocnym uzasadnieniem: brak budżetu, brak kontaktu bez szans na weryfikację, strona już dobra |
+
+**Ważne:** gwiazdki i werdykt (pisz/pisz-inaczej/odpusc) to dwa ortogonalne wymiary. Kancelaria kategorii C może być ⭐⭐⭐⭐⭐ jeśli jest oczywisty, świeży rozdźwięk i łatwy kontakt. Kancelaria A może być ⭐⭐ jeśli nie ma kontaktu. Nie mieszaj.
+
+---
+
+### Kategoria potencjału (pole `potencjal`, A/B/C)
+
+Odpowiada na pytanie **„ile możesz na tym zarobić"** — niezależnie od gwiazdek.
+
+| Kategoria | Kryteria |
+|---|---|
+| **A** | Silne sygnały wysokiego potencjału inwestycyjnego: specjalizacja biznesowa/korporacyjna (corporate, M&A, podatki, prawo gospodarcze), kancelaria wieloosobowa (i Wspólnicy, spółka), duże/średnie miasto (≥50 tys.), aktywne inwestowanie w marketing (blog, Ads, JSON-LD, nowoczesna identyfikacja) |
+| **B** | Częściowe sygnały: jeden lub dwa z powyższych, reszta niejednoznaczna. Np. duże miasto ale solo, albo wieloosobowa ale małe miasto |
+| **C** | Słabe sygnały: solo, małe miasto (<30 tys.), specjalizacja rodzinna/karna bez wyróżników, brak śladów inwestowania. Mniejszy potencjał inwestycyjny — nie wyklucza zakupu, ale obniża oczekiwania |
+
+---
+
+### Sygnały kupna (pole `sygnalyKupna`, tablica — tylko potwierdzone danymi)
+
+Wypisuj **tylko te, które wynikają z danych** (`content.json`, `vitals.json`, screenshot). Nie zgaduj.
+
+```
+✓ aktywnie rozwija kancelarię (blog, sekcja aktualności, świeże wpisy)
+✓ inwestuje w SEO (JSON-LD, meta description, przemyślana struktura H)
+✓ prowadzi blog prawny
+✓ kancelaria wieloosobowa / ma zespół (trustSignals.team=true + „i Wspólnicy")
+✓ specjalizacja dla firm / klienci biznesowi (corporate, podatki, prawo gospodarcze)
+✓ formularz kontaktowy obecny (hasForm=true)
+✓ ślady kampanii Google Ads (UTM w linkach, landing page pod frazę)
+✓ nowoczesna identyfikacja wizualna (ocena ze screenshota)
+✓ opinie z imieniem i nazwiskiem klientów (testimonials=true)
+```
+
+Puste `sygnalyKupna` = brak sygnałów gotowości inwestycyjnej → niżej w rankingu, niezależnie od tego jak zła jest strona.

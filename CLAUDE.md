@@ -10,9 +10,11 @@ Cały kod żyje w `audyt-kancelarii-skill/`. Szczegółowy CLAUDE.md jest tam. P
 
 Audyt strony kancelarii prawnej pod kątem konwersji. Pipeline:
 1. `scrape.js` pobiera stronę → `content.json` + `vitals.json` + screenshoty
-2. Claude ocenia 8 wymiarów systemu FORMA wg `reference/kryteria-audytu.md`
+2. Claude ocenia **najpierw wizualnie ze screenshotów** (Krok 0 w `kryteria-audytu.md` → `priorytet_wizualny`, nie wchodzi do score), potem 8 wymiarów systemu FORMA
 3. Claude porównuje z benchmarkiem 21 kancelarii (`reference/benchmark-pl-law.json`)
 4. Claude generuje raport wg `reference/szablon-raportu.md` → `output/<domena>/audyt.md` + `audyt-dane.json`
+
+**Ocena wizualna jest podstawą raportu i cold maila** — kancelaria chce nowej strony, bo obecna *wygląda* staro, nie przez parametry. Wymiary techniczne to uzasadnienie i materiał na rozmowę po odpowiedzi.
 
 Workflow krok po kroku: `audyt-kancelarii-skill/SKILL.md`. **Kalibracja zakończona — narzędzie w trybie produkcyjnym.**
 

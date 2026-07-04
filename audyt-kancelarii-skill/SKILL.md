@@ -42,9 +42,11 @@ Jeśli `scrape.js` zawiedzie na Lighthouse (brak Chrome), kontynuuj z samym Fire
 
 **Opcjonalnie — porównanie z konkretnym konkurentem.** Jeśli użytkownik poda drugą kancelarię (z tego samego miasta/regionu), uruchom `scripts/scrape.js <url> <url-konkurenta>`. Powstanie dodatkowo `competitor.json` = `{ url, content, vitals }` konkurenta. Wykorzystasz go w Kroku 3 (sekcja „Co robi konkurencja"). Bez drugiego argumentu pomijasz to porównanie.
 
-### Krok 2 — Zmierz według systemu FORMA
+### Krok 2 — Oceń wizualnie, potem zmierz według systemu FORMA
 
-Otwórz `reference/kryteria-audytu.md` i przejdź przez **8 wymiarów oceny**. Dla każdego wymiaru przypisz status (✅ dobrze / ⚠️ do poprawy / ❌ brak) na podstawie danych z Kroku 1. Nie oceniaj z pamięci — opieraj każdą ocenę na konkretnym polu z `content.json` lub `vitals.json`, albo na tym co widać na screenshocie.
+**Najpierw ocena wizualna — to podstawa całego audytu.** Otwórz `screenshot-desktop.png` i `screenshot-mobile.png` i przejdź przez „Krok 0 — Ocena wizualna" z `reference/kryteria-audytu.md`. Wynik: `priorytet_wizualny` (wysoki/średni/niski/do sprawdzenia) + 2–3 zdania uzasadnienia z konkretami ze screenshota. Kancelaria decyduje się na nową stronę, bo obecna *wygląda* staro — nie przez parametry; werdykt wizualny otworzy raport i da obserwację do maila.
+
+Potem przejdź przez **8 wymiarów oceny** z tego samego pliku. Dla każdego wymiaru przypisz status (✅ dobrze / ⚠️ do poprawy / ❌ brak) na podstawie danych z Kroku 1. Nie oceniaj z pamięci — opieraj każdą ocenę na konkretnym polu z `content.json` lub `vitals.json`, albo na tym co widać na screenshocie. Wymiary nie zastępują oceny wizualnej — dostarczają mierzalnego uzasadnienia i materiału na rozmowę po odpowiedzi na maila.
 
 ### Krok 3 — Porównaj z benchmarkiem
 
@@ -60,11 +62,11 @@ Używaj tych liczb w raporcie — są Twoją przewagą nad każdym ogólnym audy
 
 Użyj szablonu z `reference/szablon-raportu.md`. Wypełnij sekcje: nagłówek, ocena ogólna (score 0–100 wyliczony jak w kryteriach), Mówiąc wprost, Co działa, Co poprawić (priorytetyzowane), Jak bym to rozwiązał, Porównanie z rynkiem, (opcjonalnie) Co robi konkurencja, i szacowany wpływ na konwersję. Zapisz jako `output/<domena>/audyt.md`.
 
-Sekcja **„Mówiąc wprost"** (zaraz po ocenie ogólnej) tłumaczy **2–3 najważniejsze** problemy na język konsekwencji dla właściciela kancelarii. **Zero terminów technicznych** — żadnego HTTPS, LCP, viewport, H1, JSON-LD, schema, CTA. Zamiast przyczyny podaj, co realnie traci kancelaria (np. nie „brak HTTPS", tylko „przeglądarka straszy klienta ostrzeżeniem, część osób zamyka kartę"). To z tej sekcji wyciągasz zdania do cold maila.
+Sekcja **„Mówiąc wprost"** (zaraz po ocenie ogólnej) **zaczyna się od werdyktu wizualnego** — jak strona wygląda oczami klienta trafiającego na nią pierwszy raz (z Kroku 2, z konkretami ze screenshota). Dopiero potem 2–3 najważniejsze problemy przetłumaczone na język konsekwencji dla właściciela. **Zero terminów technicznych** — żadnego HTTPS, LCP, viewport, H1, JSON-LD, schema, CTA. Zamiast przyczyny podaj, co realnie traci kancelaria (np. nie „brak HTTPS", tylko „przeglądarka straszy klienta ostrzeżeniem, część osób zamyka kartę"). To z tej sekcji wyciągasz zdania do cold maila.
 
 W sekcji **„Jak bym to rozwiązał"** każda rekomendacja musi mieć parę **wysiłek + efekt** z „Mapy wysiłek/efekt" w `kryteria-audytu.md` (np. „HTTPS → 1 wieczór, efekt natychmiastowy"). **Listuj najpierw poprawki tanie o wysokim efekcie**, na końcu kosztowne przebudowy — to zamienia audyt z „masz problemy" w „masz tanie do naprawienia problemy o wysokim zwrocie". Sekcję **„Co robi konkurencja"** dołącz tylko, gdy istnieje `competitor.json`; w przeciwnym razie pomiń ją w całości.
 
-Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8 wymiarów + statusy + score), żeby dało się je użyć w cold mailu lub zestawieniu.
+Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8 wymiarów + statusy + score **+ pole `ocenaWizualna`**: `{ "priorytet": "wysoki|sredni|niski|do sprawdzenia", "uzasadnienie": "2–3 zdania z konkretami ze screenshota", "zaniedbanieTechniczne": "opcjonalna osobna notatka" }`), żeby dało się je użyć w cold mailu, zestawieniu i kolumnie `priorytet_wizualny` trackera.
 
 ### Krok 5 — Fragment do maila
 
@@ -76,7 +78,7 @@ Format: **jedna konkretna, możliwa do zweryfikowania obserwacja wynikająca z a
 
 Język: taki, jakim mogłaby to napisać osoba patrząca na stronę oczami klienta — nie audytor. Zero terminów technicznych (LCP, HTTPS, SSL, cache, JSON-LD, schema, meta description, benchmark, mediana, %, sekundy ładowania, viewport, H1) — nawet przetłumaczonych na „skutek dla klienta". Pytanie ma zapraszać do odpowiedzi, nie ujawniać diagnozy.
 
-**Wybór obserwacji:** weź najmocniejszy sygnał z sekcji „Co można poprawić" (priorytet 🔴 wysoki ma pierwszeństwo), ale przełóż go na konkretny, nazwany element strony — nie na ogólnikowe pytanie o wrażenie.
+**Wybór obserwacji — wizualna ma pierwszeństwo.** Najpierw sięgnij po uzasadnienie z oceny wizualnej (Krok 2 / `ocenaWizualna`): jawna stara data w stopce, layout z widocznie innej epoki, darmowa platforma, wyłącznie stockowe grafiki — to sygnały, które właściciel sam *zobaczy* po otwarciu własnej strony, więc najmocniej otwierają rozmowę o nowej stronie. Dopiero gdy strona wygląda współcześnie (`priorytet_wizualny` = niski), weź najmocniejszy sygnał z sekcji „Co można poprawić" o **układzie informacji** (specjalizacja schowana na podstronie, brak elementu kontaktowego). Zawsze przełóż na konkretny, nazwany element strony — nie na ogólnikowe pytanie o wrażenie.
 
 **Nie kwestionuj świadomej decyzji marketingowej, jeśli nie ma oczywistego uzasadnienia, że to błąd.** Wybierz fakty o **układzie informacji, treści i komunikacji** — nie oceny strategii właściciela. Przykład rozróżnienia:
 - ✅ Fakt (bezpiecznie): brak specjalizacji na pierwszym ekranie, łacińska sentencja przed ofertą, strona na Google Sites, komunikat „przerwa techniczna", brak wyraźnego elementu kontaktowego — to stany, których nikt świadomie by nie wybrał jako strategię.

@@ -2,6 +2,57 @@
 
 8 wymiarów oceny strony kancelarii pod kątem konwersji. Każdy ma wagę i sposób punktowania. Suma daje score 0–100.
 
+**Ocena wizualna (sekcja poniżej) jest nadrzędna wobec 8 wymiarów, choć nie wchodzi do score.** Kancelaria decyduje się na nową stronę, bo obecna *wygląda* staro — nie dlatego, że nagłówek jest w złym miejscu. Wizualny werdykt otwiera raport i jest pierwszym źródłem obserwacji do cold maila; 8 wymiarów dostarcza mierzalnego uzasadnienia i materiału na rozmowę po odpowiedzi.
+
+---
+
+## Krok 0 — Ocena wizualna (nie wchodzi do score)
+
+**Pytanie:** Czy strona *wygląda* na aktualną i zadbaną — oczami klienta, w pierwszych sekundach, zanim cokolwiek przeczyta?
+
+Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot-mobile.png`) — nie z danych scrapera. Otwórz oba zrzuty i przejdź przez checklistę. Wynik zapisz w `audyt-dane.json` jako pole `ocenaWizualna` i w trackerze jako `priorytet_wizualny`.
+
+### Dwie osobne osie — nie mieszaj ich
+
+1. **Wygląd przestarzały** — strona wygląda na starą (to jest główny sygnał zakupowy dla FORMA).
+2. **Zaniedbanie techniczne** — strona może wyglądać nowocześnie, ale ma widoczne błędy (np. komunikaty serwera, puste sekcje). To inny argument w rozmowie — odnotuj osobno, nie podnoś nim werdyktu „przestarzała".
+
+### Checklista — wygląd przestarzały
+
+| Sygnał | Na co patrzeć |
+|---|---|
+| Markery epoki designu | wąski layout w ramce na kafelkowym/teksturowanym tle, twarde cienie, przyciski-zakładki, gradienty 3D → ~2008–2012; pełnoekranowe hero + grid + duża typografia → współczesne |
+| Jawne daty | rok copyright w stopce, daty wpisów na blogu, „Designed by …" — cytowalny dowód wieku |
+| Platforma | Google Sites / darmowy kreator = brak własnej strony; stary szablon (np. templatemo) |
+| Zdjęcia | prawdziwe fotografie prawników/kancelarii = inwestycja; wyłącznie stock/clipart/ikonki = szablon bez personalizacji |
+| Przestarzałe praktyki | chmura słów kluczowych SEO, licznik odwiedzin, sentencja łacińska jako jedyny przekaz hero |
+| Gęstość i typografia | mikroskopijny tekst, ściana treści bez oddechu, systemowe fonty z epoki |
+
+### Checklista — zaniedbanie techniczne (osobna notatka)
+
+| Sygnał | Przykład |
+|---|---|
+| Błędy wypisane na stronie | komunikaty PHP/serwera („Disk quota exceeded"), błędy sesji |
+| Treści-atrapy | opinie „Jan Kowalski", lorem ipsum, pusta mapa, pusta sekcja |
+| Elementy zepsute | baner cookies zasłaniający treść, niedziałający slider, strona w trybie konserwacji |
+
+### Zastrzeżenia (żeby nie oceniać niesprawiedliwie)
+
+- **Screenshot to jedna klatka.** Puste sekcje mogą być artefaktem lazy-loadingu przy zrzucie — jeśli werdykt zależy od „pustej sekcji", sprawdź stronę na żywo zanim to napiszesz w mailu.
+- **Sprawdź też mobile.** Stare strony najbardziej rozjeżdżają się na telefonie — desktop potrafi maskować wiek.
+- Baner cookies na zrzucie to nie zarzut — każdy go ma.
+
+### Werdykt
+
+| `priorytet_wizualny` | Kryterium | Znaczenie dla outreachu |
+|---|---|---|
+| `wysoki` | ≥2 sygnały przestarzałości LUB 1 mocny (jawna stara data, layout sprzed ~2012, darmowa platforma) | najlepszy kandydat na cold mail — właściciel sam zobaczy problem |
+| `sredni` | pojedyncze słabsze sygnały, strona „poprawna ale bez inwestycji" | pisać, ale hak musi być bardzo konkretny |
+| `niski` | strona wygląda współcześnie i zadbanie | odpuścić lub na koniec kolejki — mała szansa, że właściciel poczuje potrzebę zmiany |
+| `do sprawdzenia` | screenshot nie pozwala ocenić (przerwa techniczna, błąd zrzutu) | wrócić przed wysyłką |
+
+Do werdyktu dopisz **2–3 zdania uzasadnienia z konkretami ze screenshota** (co dokładnie widać i gdzie) — to z nich powstaje obserwacja do maila 1.
+
 ---
 
 ## 1. Jasność specjalizacji (waga 15)

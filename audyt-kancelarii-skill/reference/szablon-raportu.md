@@ -9,13 +9,14 @@ Wypełnij ten szablon danymi z audytu. Usuń komentarze w nawiasach `[…]`. Zac
 **URL:** [url]
 **Data:** [data]
 **Score ogólny:** [X]/100 — tier [wysoki/średni/niski/krytyczny]
+**Ocena wizualna:** [wysoki/średni/niski priorytet — jedno zdanie werdyktu, np. „strona wygląda na projekt sprzed ~10 lat (copyright 2017 w stopce, wąski layout w ramce)"]
 **Względem rynku:** [powyżej / na poziomie / poniżej] mediany 21 polskich kancelarii (60/100)
 
 ---
 
 ## Mówiąc wprost
 
-[2–4 zdania dla właściciela kancelarii — **ZERO żargonu technicznego** (żadnego HTTPS, LCP, viewport, H1, JSON-LD, schema, CTA, meta). Nazwij 2–3 najważniejsze problemy przez ich **skutek dla klienta**, nie przyczynę techniczną. Ton rozmowy, bezpośredni zwrot („Pana/Pani strona"). Zakończ zdaniem, czy to szybkie poprawki, czy przebudowa. **To z tej sekcji wyciągasz 2–3 zdania do cold maila** — reszta raportu (techniczna) zostaje do rozmowy.]
+[**Zacznij od tego, jak strona WYGLĄDA** oczami klienta trafiającego pierwszy raz — z konkretami ze screenshota (ocena wizualna z Kroku 2). To jest główny powód, dla którego kancelaria zdecyduje się na zmianę. Potem 2–4 zdania o najważniejszych problemach przez ich **skutek dla klienta** — **ZERO żargonu technicznego** (żadnego HTTPS, LCP, viewport, H1, JSON-LD, schema, CTA, meta). Ton rozmowy, bezpośredni zwrot („Pana/Pani strona"). Zakończ zdaniem, czy to szybkie poprawki, czy przebudowa. **To z tej sekcji wyciągasz 2–3 zdania do cold maila** — reszta raportu (techniczna) zostaje do rozmowy.]
 
 [Wzór tłumaczenia technika → człowiek:
 - brak HTTPS → „przeglądarka straszy klienta ostrzeżeniem o niebezpiecznej stronie — część osób od razu zamyka kartę"

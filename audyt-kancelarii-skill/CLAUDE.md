@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Audyt strony kancelarii prawnej pod kątem konwersji. Pipeline:
 1. `scrape.js` pobiera stronę → `content.json` + `vitals.json` + screenshoty
-2. Claude ocenia 8 wymiarów systemu FORMA wg `reference/kryteria-audytu.md`
+2. Claude ocenia **najpierw wizualnie ze screenshotów** (Krok 0 → `priorytet_wizualny`, poza score), potem 8 wymiarów systemu FORMA wg `reference/kryteria-audytu.md`
 3. Claude porównuje z benchmarkiem 21 kancelarii (`reference/benchmark-pl-law.json`)
 4. Claude generuje raport wg `reference/szablon-raportu.md` → `output/<domena>/audyt.md` + `audyt-dane.json`
 
@@ -81,10 +81,11 @@ Cloudflare Pages, projekt `zla-kancelaria`, konto FORMA Wizerunku. Pliki źród�
 
 ## Zasady audytu
 
-1. **Ton: merytoryczny, nigdy obraźliwy.** Fakt → konsekwencja → rozwiązanie. Szczegóły w `SKILL.md`.
-2. **Każda ocena z danych** — status wymiaru musi wynikać z pola w `content.json`/`vitals.json` lub screenshota. Nie oceniaj z pamięci.
-3. **Audyt publiczny (blog/LinkedIn) = anonimizuj** nazwę. Nazwa zostaje tylko w cold mailu do tej kancelarii lub za zgodą.
-4. **Nie zmieniaj `benchmark-pl-law.json` ręcznie.**
+1. **Ocena wizualna ze screenshotów jest pierwsza i nadrzędna** (Krok 0 w `kryteria-audytu.md`, nie wchodzi do score) — otwiera raport, daje `priorytet_wizualny` i obserwację do maila. Dwie osie osobno: wygląd przestarzały ≠ zaniedbanie techniczne.
+2. **Ton: merytoryczny, nigdy obraźliwy.** Fakt → konsekwencja → rozwiązanie. Szczegóły w `SKILL.md`.
+3. **Każda ocena z danych** — status wymiaru musi wynikać z pola w `content.json`/`vitals.json` lub screenshota. Nie oceniaj z pamięci.
+4. **Audyt publiczny (blog/LinkedIn) = anonimizuj** nazwę. Nazwa zostaje tylko w cold mailu do tej kancelarii lub za zgodą.
+5. **Nie zmieniaj `benchmark-pl-law.json` ręcznie.**
 
 ---
 

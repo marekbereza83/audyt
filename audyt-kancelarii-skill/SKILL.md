@@ -70,12 +70,28 @@ Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8
 
 Zapisz `output/<domena>/mail-fragment.txt` — **zawsze, dla każdej zaudytowanej strony**.
 
-Format: **2–4 zdania** (maks. ~400 znaków), czysty tekst bez nagłówków i markdownu. Bierz najważniejszy problem z sekcji „Mówiąc wprost": jedna obserwacja → konsekwencja w języku klienta → jedno zdanie, że to szybka poprawka lub realny zysk.
+**To pole zasila WYŁĄCZNIE otwarcie maila 1.** Fakty techniczne z audytu (LCP, HTTPS, JSON-LD, benchmark, score) zostają w `audyt.md` do użytku wewnętrznego FORMA i **nie trafiają do dalszej korespondencji** — ani do tego pliku, ani do maili 2–5 generowanych później przez skill `cold-email`.
 
-**Wybór problemu:** gdy kilka ma priorytet 🔴 wysoki, wybierz ten o największym wpływie na pierwsze wrażenie. HTTPS i mobile mają pierwszeństwo przed tym, czego klient nie widzi (np. brak JSON-LD).
+Format: **jedna konkretna, możliwa do zweryfikowania obserwacja wynikająca z audytu + jedno pytanie otwarte.** Nie sama miękka opinia — obserwacja musi nazywać coś, co odbiorca może sam sprawdzić na własnej stronie (np. dosłowny cytat nagłówka, konkretny element, który tam jest albo którego tam nie ma). **Test przed zapisaniem: czy to zdanie dałoby się wysłać do dowolnej innej kancelarii bez zmian i wciąż brzmiałoby prawdziwie?** Jeśli tak — obserwacja jest za ogólna, wróć do audytu i weź coś bardziej charakterystycznego dla tej konkretnej strony.
 
-Wzór tonu (~250 znaków, 3 zdania):
-> Sprawdziłem stronę Kancelarii. Przeglądarka pokazuje klientowi ostrzeżenie o niezabezpieczonej stronie — przy sprawach karnych to moment, w którym wiele osób zamyka kartę. To prosta poprawka, nie przebudowa.
+Język: taki, jakim mogłaby to napisać osoba patrząca na stronę oczami klienta — nie audytor. Zero terminów technicznych (LCP, HTTPS, SSL, cache, JSON-LD, schema, meta description, benchmark, mediana, %, sekundy ładowania, viewport, H1) — nawet przetłumaczonych na „skutek dla klienta". Pytanie ma zapraszać do odpowiedzi, nie ujawniać diagnozy.
+
+**Wybór obserwacji:** weź najmocniejszy sygnał z sekcji „Co można poprawić" (priorytet 🔴 wysoki ma pierwszeństwo), ale przełóż go na konkretny, nazwany element strony — nie na ogólnikowe pytanie o wrażenie.
+
+**Nie kwestionuj świadomej decyzji marketingowej, jeśli nie ma oczywistego uzasadnienia, że to błąd.** Wybierz fakty o **układzie informacji, treści i komunikacji** — nie oceny strategii właściciela. Przykład rozróżnienia:
+- ✅ Fakt (bezpiecznie): brak specjalizacji na pierwszym ekranie, łacińska sentencja przed ofertą, strona na Google Sites, komunikat „przerwa techniczna", brak wyraźnego elementu kontaktowego — to stany, których nikt świadomie by nie wybrał jako strategię.
+- ⚠️ Możliwa świadoma decyzja (unikaj kwestionowania bez uzasadnienia): fraza SEO w nagłówku (może to przemyślane pozycjonowanie), brak nazwisk przy opiniach (może to ochrona danych klientów kancelarii), forma kontaktu ograniczona do formularza (może to celowe filtrowanie zapytań). Jeśli sygnał z audytu jest tego typu — poszukaj innego, bardziej jednoznacznego faktu zamiast go użyć.
+
+Przykłady tłumaczenia:
+- „strona ładuje się 5,8 s" → obserwacja o czymś widocznym, nie o samej szybkości: np. brak elementu, na który klient czeka, zanim strona się doładuje.
+- „H1 = tylko imię i nazwisko, specjalizacja dopiero na podstronie" → „Na stronie głównej jest Pani imię i nazwisko, ale nie ma tam informacji, jakimi sprawami się Pani zajmuje — trzeba kliknąć w osobną zakładkę, żeby to znaleźć."
+- „H1 = angielski slogan bez konkretu" → zacytuj dosłownie ten nagłówek: „Nagłówek na stronie głównej brzmi »Leading Law Firm in Poland« — nie mówi wprost, jakimi sprawami zajmuje się kancelaria."
+- „stary szablon, copyright 2017" → „Stopka strony pokazuje `© 2017` — od tamtej pory strona wygląda na nieodświeżaną."
+
+Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie):
+> Sprawdziłem stronę kancelarii. [Konkretna, cytowalna/weryfikowalna obserwacja o tej stronie]. [Jedno pytanie otwarte].
+
+`mail-fragment.txt` to jedyny touchpoint audytu w cold mailu — nie gotowy mail i nie brief techniczny na całą sekwencję. Finalną treść maila 1 oraz całą sekwencję follow-upów (bez odwołań do audytu od maila 2) pisze skill `cold-email` z oficjalnego repo marketingskills (`.agents/skills/cold-email`), zgodnie z zasadami w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
 
 ## Wyjście
 

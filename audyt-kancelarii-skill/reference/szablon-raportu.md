@@ -93,4 +93,4 @@ Największy potencjał: [1 zdanie — co da największy zwrot]. Pozostałe zmian
 
 ---
 
-> **Notatka (nie część raportu):** Fragment do maila zapisywany jest osobno do `mail-fragment.txt` — najważniejszy problem z sekcji „Mówiąc wprost", skrócony do 2–4 zdań (maks. ~400 znaków, czysty tekst, bez nagłówków). W trybie wsadowym wszystkie fragmenty trafiają do `output/batch-fragments.csv` (`node batch-report.js <lista.csv>`).
+> **Notatka (nie część raportu):** Ta sekcja może zostać technicznie szczegółowa — to dokument wewnętrzny FORMA. **Nie jest już jednak bezpośrednim źródłem `mail-fragment.txt`.** `mail-fragment.txt` to teraz jedno pytanie/miękka obserwacja bez żargonu technicznego (patrz `SKILL.md` → Krok 5) — audyt dostarcza tylko najmocniejszy sygnał do przetłumaczenia, nie gotowe zdanie z tej sekcji. W trybie wsadowym wszystkie fragmenty trafiają do `output/batch-fragments.csv` (`node batch-report.js <lista.csv>`).

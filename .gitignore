@@ -1,6 +1,9 @@
 # === Sekrety — NIGDY do repo ===
 # .claude/settings.local.json zawiera zapisane komendy z kluczem Firecrawl w jawnym tekście
 .claude/settings.local.json
+# .claude/skills/* to lokalne symlinki do .agents/skills/* (npx skills add) — core.symlinks=false
+# na tym Windowsie zapisałoby je jako zdublowane pliki, nie symlinki. Źródło prawdy: .agents/skills/.
+.claude/skills/
 # Klucze API (siatka bezpieczeństwa — dodatkowo do scripts/.env w skillu)
 .env
 **/.env

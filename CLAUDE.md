@@ -43,6 +43,19 @@ Opcjonalnie z konkurentem: `node scrape.js https://kancelaria.pl https://konkure
 
 ---
 
+## Pisanie cold maila do kancelarii (po audycie)
+
+1. Uruchom audyt: `audyt-kancelarii-skill/scripts/scrape.js <url>` → `audyt.md` + `mail-fragment.txt`.
+2. Użyj `mail-fragment.txt` jako „research signal" (punkt 5 z listy pytań w skillu `cold-email`, sekcja „Before Writing").
+3. Uruchom skill `cold-email` (`.agents/skills/cold-email`, z repo `coreyhaines31/marketingskills`) — frameworks, subject-lines, personalization, follow-up-sequences, benchmarks. Skill sam czyta `.agents/product-marketing.md` dla kontekstu FORMA, jeśli plik istnieje.
+4. `mail-fragment.txt` to surowy research signal (fakt + pain point), nie gotowy mail — `cold-email` nadaje mu strukturę, temat, i pilnuje zasad anty-szablonowych.
+
+**Ważne — audyt daje jedną obserwację, nie brief techniczny na całą sekwencję.** FORMA sprzedaje nową stronę/wizerunek, nie audyt SEO/wydajności. Cała async sekwencja (mail 1 → follow-upy) ma być wolna od żargonu technicznego (LCP, cache, SSL, JSON-LD, benchmark, „score") — te wchodzą dopiero do rozmowy po odpowiedzi odbiorcy. Pełne zasady i przykład w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
+
+Do budowania listy kancelarii do zaudytowania (upstream, przed powyższym workflow) dostępny jest też skill `prospecting` (ten sam repo) — nie pokrywa się z `audyt-kancelarii`: `prospecting` szuka i kwalifikuje firmy, `audyt-kancelarii` audytuje jedną konkretną stronę.
+
+---
+
 ## Tryb wsadowy (batch)
 
 ```bash

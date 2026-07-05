@@ -18,11 +18,11 @@ Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot
 
 | # | Wymiar | Co oceniasz | Przykłady 🔴 |
 |---|---|---|---|
-| 1 | **Aktualność designu** | Czy strona wygląda współcześnie? | wąska kolumna ~960 px w ramce, teksturowane/kafelkowe tło, gradientowe przyciski, bevel/3D, stary slider na całą szerokość |
+| 1 | **Aktualność designu** | Czy strona wygląda współcześnie? | wąska kolumna ~960 px w ramce, teksturowane/kafelkowe tło, **fotorealistyczny skeuomorfizm (drewniane biurko, skóra, papier)**, gradientowe przyciski, bevel/3D, stary slider na całą szerokość, **dekoracyjna kursywa/skrypt na sentencję-motto**, **duotone/kolorowy filtr na hero + filigranowe ornamenty wokół nagłówków**, **„brak systemu designu" — justowany serif + podkreślone niebieskie linki, dokument wklejony w HTML** |
 | 2 | **Pierwsze wrażenie** | Co klient widzi w 5 sekund? | łacińska sentencja zamiast oferty, brak specjalizacji w hero, puste/nijakie hero |
 | 3 | **Spójność marki** | Czy wszystko wygląda jak jedna marka? | wyłącznie stockowe zdjęcia/clipart, mieszane fonty, przypadkowe kolory |
 | 4 | **Wiarygodność** | Czy coś obniża zaufanie? | © z dawnym rokiem, komunikaty błędów serwera, Google Sites/darmowy kreator, „PRZERWA TECHNICZNA", niedziałające elementy, opinie-atrapy („Jan Kowalski") |
-| 5 | **Świeżość treści** | Czy widać oznaki życia? | ostatni wpis bloga sprzed lat, nieaktualne informacje, puste sekcje |
+| 5 | **Świeżość treści** | Czy widać oznaki życia? | ostatni wpis bloga sprzed lat, nieaktualne informacje, puste sekcje, **data wtopiona w grafikę/skan (np. „…2010 r." na obrazku pisma)** |
 
 Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy serwera na świeżym szablonie) — w mailu opisz wtedy konkretny błąd/zaniedbanie, **nie sugeruj, że strona jest stara**, bo właściciel od razu zobaczy, że to nieprawda.
 
@@ -30,7 +30,7 @@ Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy
 
 ### Markery epoki (pomocnicze przy wymiarach 1 i 4)
 
-**Stary design:** Google Sites · WordPress z motywem 2012–2016 (np. templatemo) · teksturowe tła · gradientowe przyciski · slider na całą szerokość · chmura tagów · licznik odwiedzin · ikony 3D · układ tabelaryczny · wąska kolumna ~960 px · mikroskopijny tekst bez oddechu.
+**Stary design:** Google Sites · WordPress z motywem 2012–2016 (np. templatemo) · **widoczny kredyt darmowego/nieprzerobionego szablonu w stopce** (np. „templatemo.com / CC BY 3.0", „Wykonanie: …") · teksturowe tła · **fotorealistyczny skeuomorfizm — drewniane biurko, skóra, papier, młotek/koperta jako grafiki** · gradientowe przyciski · slider na całą szerokość · **duotone/kolorowy filtr na zdjęcie hero** · **filigranowe/ornamentowe dividery wokół nagłówków** · **dekoracyjna kursywa/skrypt na łacińskie sentencje** · chmura tagów · licznik odwiedzin · ikony 3D · układ tabelaryczny · wąska kolumna ~960 px · mikroskopijny tekst bez oddechu · **data wtopiona w grafikę** · **„brak systemu designu" — justowany serif, domyślnie niebieskie podkreślone linki, małe wklejone zdjęcia (strona wygląda jak dokument Word w HTML — sygnał starszy niż zła templatka)**.
 
 **Nowoczesny design:** dużo białej przestrzeni · czytelna typografia · proste hero · wyraźna specjalizacja od wejścia · współczesne, realne zdjęcia · spójna kolorystyka.
 

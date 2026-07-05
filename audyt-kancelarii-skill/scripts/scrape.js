@@ -318,40 +318,26 @@ async function scrapeContent(targetUrl, { withServices = false } = {}) {
   return content;
 }
 
-// fullPage:true rozciąga viewport na wysokość całej strony przed przechwyceniem.
-// Elementy z position:fixed/sticky (pływające menu, sticky nagłówki) są wtedy
-// pozycjonowane względem tego sztucznie wysokiego viewportu, więc renderują się
-// w środku strony i potrafią zasłonić realną treść pod spodem (wygląda to jak
-// "puste miejsce" na zrzucie, choć w DOM treść tam jest). Neutralizujemy je na
-// czas zrzutu — patrz audyt adwokatsoltys.pl, gdzie to dało fałszywe wrażenie
-// pustej sekcji.
-async function neutralizeFixedElements(page) {
-  await page.evaluate(() => {
-    document.querySelectorAll('*').forEach((el) => {
-      const cs = getComputedStyle(el);
-      if (cs.position === 'fixed' || cs.position === 'sticky') {
-        el.style.setProperty('position', 'static', 'important');
-      }
-    });
-  }).catch(() => {}); // nie przerywaj scrape'a, jeśli strona zablokuje eval
-}
-
 // Wiele starszych szablonów (Cherry Framework, AOS, WOW.js) chowa treść do
 // czasu realnego scrolla ("reveal on scroll") — klasy typu "lazy-load-box
 // trigger". fullPage:true tylko rozciąga viewport, nigdy nie scrolluje, więc
 // taka treść zostaje niewidoczna na zrzucie, mimo że jest w DOM (patrz audyt
 // adwokatsoltys.pl — cztery boksy usług znikały właśnie tak). Przewijamy
 // realnie całą stronę przed zrzutem, żeby dać tym skryptom szansę odpalić.
+// (Uwaga: nie neutralizujemy position:fixed/sticky — próba naprawy sztucznie
+// rozciągniętego viewportu w ten sposób złamała layout na kancelaria-liszka.pl,
+// gdzie fixed hero jest częścią zamierzonego układu, a inne sekcje mają
+// margines/padding skalibrowany właśnie pod jego fixed-pozycjonowanie.)
 async function scrollThroughPage(page) {
   await page.evaluate(async () => {
     const step = window.innerHeight;
     const total = document.body.scrollHeight;
     for (let y = 0; y < total; y += step) {
       window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 500));
     }
     window.scrollTo(0, 0);
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 500));
   }).catch(() => {});
 }
 
@@ -371,7 +357,6 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
     try {
       await pageD.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
       await scrollThroughPage(pageD);
-      await neutralizeFixedElements(pageD);
       await pageD.screenshot({ path: path.join(outDir, 'screenshot-desktop.png'), fullPage: true });
     } catch (e) { vitals.desktopError = e.message; }
     await ctxD.close();
@@ -387,7 +372,6 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
     await pageM.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     if (withScreenshots) {
       await scrollThroughPage(pageM);
-      await neutralizeFixedElements(pageM);
       await pageM.screenshot({ path: path.join(outDir, 'screenshot-mobile.png'), fullPage: true });
     }
     const hasViewport = await pageM.$('meta[name="viewport"]');
@@ -472,7 +456,6 @@ async function peekScreenshot(targetUrl) {
     const page = await ctx.newPage();
     await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
     await scrollThroughPage(page);
-    await neutralizeFixedElements(page);
     await page.screenshot({ path: shot, fullPage: true });
     await ctx.close();
   } finally {

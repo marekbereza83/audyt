@@ -26,6 +26,8 @@ Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot
 
 Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy serwera na świeżym szablonie) — w mailu opisz wtedy konkretny błąd/zaniedbanie, **nie sugeruj, że strona jest stara**, bo właściciel od razu zobaczy, że to nieprawda.
 
+**Nie myl zaniedbania całej strony z pojedynczym niedokończonym elementem.** Jedna pusta sekcja (akordeon bez rozwiniętej treści, nieużywana zakładka bloga) na stronie, która poza tym ma nowoczesny hero, realne zdjęcia i spójną markę, to **🟡, nie 🔴** — to drobne niedopracowanie wykonawcze, nie sygnał „ta strona przestała reprezentować kancelarię". 🔴 w Wiarygodności/Świeżości treści zarezerwuj dla sygnałów, które dotyczą **całej strony**: błąd wypisany na stronie, martwa platforma, jawnie stara data, albo **kilka** takich drobiazgów naraz (nie jeden).
+
 ### Markery epoki (pomocnicze przy wymiarach 1 i 4)
 
 **Stary design:** Google Sites · WordPress z motywem 2012–2016 (np. templatemo) · teksturowe tła · gradientowe przyciski · slider na całą szerokość · chmura tagów · licznik odwiedzin · ikony 3D · układ tabelaryczny · wąska kolumna ~960 px · mikroskopijny tekst bez oddechu.
@@ -37,9 +39,11 @@ Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy
 | Werdykt | Reguła | Znaczenie dla outreachu |
 |---|---|---|
 | `wysoki` | ≥2 wymiary 🔴, LUB 1 🔴 w Aktualności designu z mocnym markerem (jawna stara data, layout sprzed ~2012, darmowa platforma) | najlepszy kandydat — właściciel sam zobaczy problem |
-| `sredni` | 1 wymiar 🔴 lub ≥2 🟡 | pisać, ale hak musi być bardzo konkretny |
-| `niski` | brak 🔴, najwyżej 1 🟡 | odpuścić lub koniec kolejki — mała szansa, że właściciel poczuje potrzebę zmiany |
+| `sredni` | 1 wymiar 🔴, LUB ≥3 wymiary 🟡 | pisać, ale hak musi być bardzo konkretny |
+| `niski` | brak 🔴, najwyżej 2 🟡 | odpuścić lub koniec kolejki — mała szansa, że właściciel poczuje potrzebę zmiany |
 | `do sprawdzenia` | screenshot nie pozwala ocenić (przerwa techniczna, błąd zrzutu) | wrócić przed wysyłką |
+
+**Kontrola zdroworozsądkowa przed zapisaniem werdyktu:** jeśli hero, zdjęcia i spójność marki są ✅, a jedyny problem to pojedynczy drobiazg (pusta sekcja, nieużywany blog) — to `niski`, nawet jeśli formalnie wychodzi 1-2 🟡. Reguła w tabeli to podłoga, nie automat: zapytaj się „czy właściciel, patrząc na TĘ stronę, uzna że wygląda nowocześnie i tylko coś drobnego jest niedopracowane, czy że strona go nie reprezentuje?" — w pierwszym przypadku zawsze `niski`, bez względu na formalne liczenie.
 
 Pod werdyktem **wypisz markery, które o nim zadecydowały** — to z nich powstaje obserwacja do maila 1. Format:
 

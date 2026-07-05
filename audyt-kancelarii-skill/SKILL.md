@@ -94,7 +94,14 @@ Format: **jedna konkretna, możliwa do zweryfikowania obserwacja wynikająca z a
 
 Język: taki, jakim mogłaby to napisać osoba patrząca na stronę oczami klienta — nie audytor. Zero terminów technicznych (LCP, HTTPS, SSL, cache, JSON-LD, schema, meta description, benchmark, mediana, %, sekundy ładowania, viewport, H1) — nawet przetłumaczonych na „skutek dla klienta". Pytanie ma zapraszać do odpowiedzi, nie ujawniać diagnozy.
 
-**Wybór obserwacji — wizualna ma pierwszeństwo.** Najpierw sięgnij po uzasadnienie z oceny wizualnej (Krok 2 / `ocenaWizualna`): jawna stara data w stopce, layout z widocznie innej epoki, darmowa platforma, wyłącznie stockowe grafiki — to sygnały, które właściciel sam *zobaczy* po otwarciu własnej strony, więc najmocniej otwierają rozmowę o nowej stronie. Dopiero gdy strona wygląda współcześnie (`priorytet_wizualny` = niski), weź najmocniejszy sygnał z sekcji „Co można poprawić" o **układzie informacji** (specjalizacja schowana na podstronie, brak elementu kontaktowego). Zawsze przełóż na konkretny, nazwany element strony — nie na ogólnikowe pytanie o wrażenie.
+**Hierarchia hooków — wybieraj z najwyższej kategorii, w której coś się znajdzie.** Nie wszystkie sygnały „widoczne na screenshocie" są sobie równe: jedne dominują pierwsze wrażenie, inne trzeba zauważyć i zinterpretować. Cztery kategorie, malejąca siła:
+
+1. ⭐⭐⭐⭐⭐ **Pierwsze wrażenie (pierwsze 2–3 sekundy).** To, co nowy klient widzi natychmiast, zanim zacznie cokolwiek czytać. Przykłady: hero wygląda na projekt sprzed kilkunastu lat, kolaż kilku niepowiązanych zdjęć, drewniane tło/tekstura marmuru (skeuomorfizm), łacińska sentencja zamiast informacji o ofercie, Google Sites, komunikat „Przerwa techniczna", slider z pięciu zdjęć, stockowe zdjęcie młotka. Test: właściciel patrzy na własną stronę i myśli „Rzeczywiście… tak to wygląda." **Wybieraj zawsze, jeśli coś z tej kategorii istnieje** — nic niżej jej nie przebija.
+2. ⭐⭐⭐⭐ **Układ informacji.** Np. na stronie głównej nie widać, czym zajmuje się kancelaria — trzeba wejść w „Zakres usług"; pierwszy ekran pokazuje nazwisko, ale nie specjalizację. Nadal bardzo dobry hook — użyj, gdy kategoria 1 jest pusta (typowo `priorytet_wizualny` = niski, strona wygląda współcześnie).
+3. ⭐⭐⭐ **Widoczne błędy.** Czerwone komunikaty PHP/serwera, puste sekcje, tekst wychodzący poza ekran, niedziałające elementy, brakujące zdjęcia. Konkretne i weryfikowalne, ale zwykle dotyczą jednego elementu, nie całego wrażenia — użyj, gdy 1–2 są puste.
+4. ⭐⭐ **Detale potwierdzające.** `© 2017`, `Copyright 2015`, favicon, stare ikony social media, stary rok w stopce. Prawdziwe i „widoczne", ale nikt ich nie zauważa, dopóki nie zacznie szukać — same w sobie nie budzą wrażenia „ta strona wygląda staro". **Nigdy jako główny hook maila 1, jeśli istnieje coś z kategorii 1–3.** Miejsce na nie: mail 2+ jako potwierdzenie/dodatek do mocniejszego hooka, nie jako samodzielne otwarcie.
+
+Zawsze przełóż wybraną obserwację na konkretny, nazwany element strony — nie na ogólnikowe pytanie o wrażenie.
 
 **Nie kwestionuj świadomej decyzji marketingowej, jeśli nie ma oczywistego uzasadnienia, że to błąd.** Wybierz fakty o **układzie informacji, treści i komunikacji** — nie oceny strategii właściciela. Przykład rozróżnienia:
 - ✅ Fakt (bezpiecznie): brak specjalizacji na pierwszym ekranie, łacińska sentencja przed ofertą, strona na Google Sites, komunikat „przerwa techniczna", brak wyraźnego elementu kontaktowego — to stany, których nikt świadomie by nie wybrał jako strategię.
@@ -104,7 +111,7 @@ Przykłady tłumaczenia:
 - „strona ładuje się 5,8 s" → obserwacja o czymś widocznym, nie o samej szybkości: np. brak elementu, na który klient czeka, zanim strona się doładuje.
 - „H1 = tylko imię i nazwisko, specjalizacja dopiero na podstronie" → „Na stronie głównej jest Pani imię i nazwisko, ale nie ma tam informacji, jakimi sprawami się Pani zajmuje — trzeba kliknąć w osobną zakładkę, żeby to znaleźć."
 - „H1 = angielski slogan bez konkretu" → zacytuj dosłownie ten nagłówek: „Nagłówek na stronie głównej brzmi »Leading Law Firm in Poland« — nie mówi wprost, jakimi sprawami zajmuje się kancelaria."
-- „stary szablon, copyright 2017" → „Stopka strony pokazuje `© 2017` — od tamtej pory strona wygląda na nieodświeżaną."
+- „stary szablon, copyright 2017" → „Stopka strony pokazuje `© 2017` — od tamtej pory strona wygląda na nieodświeżaną." (kategoria 4 — użyj tylko, gdy nic z kategorii 1–3 nie występuje na tej stronie)
 
 Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie):
 > Sprawdziłem stronę kancelarii. [Konkretna, cytowalna/weryfikowalna obserwacja o tej stronie]. [Jedno pytanie otwarte].

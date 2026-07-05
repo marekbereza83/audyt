@@ -44,7 +44,7 @@ Jeśli `scrape.js` zawiedzie na Lighthouse (brak Chrome), kontynuuj z samym Fire
 
 ### Krok 2 — Oceń wizualnie, potem zmierz według systemu FORMA
 
-**Najpierw ocena wizualna — to podstawa całego audytu.** Otwórz `screenshot-desktop.png` i `screenshot-mobile.png` i przejdź przez „Krok 0 — Ocena wizualna" z `reference/kryteria-audytu.md`. Wynik: `priorytet_wizualny` (wysoki/średni/niski/do sprawdzenia) + 2–3 zdania uzasadnienia z konkretami ze screenshota. Kancelaria decyduje się na nową stronę, bo obecna *wygląda* staro — nie przez parametry; werdykt wizualny otworzy raport i da obserwację do maila.
+**Najpierw ocena wizualna — to podstawa całego audytu.** Otwórz `screenshot-desktop.png` i `screenshot-mobile.png` i przejdź przez „Krok 0 — Ocena wizualna" z `reference/kryteria-audytu.md`: 5 wymiarów (aktualność designu, pierwsze wrażenie, spójność marki, wiarygodność, świeżość treści), każdy ✅/🟡/🔴. Wynik: `priorytet_wizualny` (wysoki/średni/niski/do sprawdzenia) wyliczony z reguły w kryteriach **+ lista markerów, które o nim zadecydowały**. Pytanie przewodnie: czy właściciel, patrząc na własną stronę, może poczuć, że przestała reprezentować jego kancelarię? Werdykt wizualny otworzy raport i da obserwację do maila.
 
 Potem przejdź przez **8 wymiarów oceny** z tego samego pliku. Dla każdego wymiaru przypisz status (✅ dobrze / ⚠️ do poprawy / ❌ brak) na podstawie danych z Kroku 1. Nie oceniaj z pamięci — opieraj każdą ocenę na konkretnym polu z `content.json` lub `vitals.json`, albo na tym co widać na screenshocie. Wymiary nie zastępują oceny wizualnej — dostarczają mierzalnego uzasadnienia i materiału na rozmowę po odpowiedzi na maila.
 
@@ -66,7 +66,23 @@ Sekcja **„Mówiąc wprost"** (zaraz po ocenie ogólnej) **zaczyna się od werd
 
 W sekcji **„Jak bym to rozwiązał"** każda rekomendacja musi mieć parę **wysiłek + efekt** z „Mapy wysiłek/efekt" w `kryteria-audytu.md` (np. „HTTPS → 1 wieczór, efekt natychmiastowy"). **Listuj najpierw poprawki tanie o wysokim efekcie**, na końcu kosztowne przebudowy — to zamienia audyt z „masz problemy" w „masz tanie do naprawienia problemy o wysokim zwrocie". Sekcję **„Co robi konkurencja"** dołącz tylko, gdy istnieje `competitor.json`; w przeciwnym razie pomiń ją w całości.
 
-Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8 wymiarów + statusy + score **+ pole `ocenaWizualna`**: `{ "priorytet": "wysoki|sredni|niski|do sprawdzenia", "uzasadnienie": "2–3 zdania z konkretami ze screenshota", "zaniedbanieTechniczne": "opcjonalna osobna notatka" }`), żeby dało się je użyć w cold mailu, zestawieniu i kolumnie `priorytet_wizualny` trackera.
+Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8 wymiarów + statusy + score **+ pole `ocenaWizualna`**):
+
+```json
+"ocenaWizualna": {
+  "priorytet": "wysoki|sredni|niski|do sprawdzenia",
+  "wymiary": {
+    "aktualnoscDesignu": "ok|do sprawdzenia|problem",
+    "pierwszeWrazenie": "ok|do sprawdzenia|problem",
+    "spojnoscMarki": "ok|do sprawdzenia|problem",
+    "wiarygodnosc": "ok|do sprawdzenia|problem",
+    "swiezoscTresci": "ok|do sprawdzenia|problem"
+  },
+  "markery": ["©2017 w stopce", "teksturowane tło", "wąska ramka"]
+}
+```
+
+— żeby dało się je użyć w cold mailu, zestawieniu i kolumnie `priorytet_wizualny` trackera.
 
 ### Krok 5 — Fragment do maila
 

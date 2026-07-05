@@ -9,7 +9,17 @@ Wypełnij ten szablon danymi z audytu. Usuń komentarze w nawiasach `[…]`. Zac
 **URL:** [url]
 **Data:** [data]
 **Score ogólny:** [X]/100 — tier [wysoki/średni/niski/krytyczny]
-**Ocena wizualna:** [wysoki/średni/niski priorytet — jedno zdanie werdyktu, np. „strona wygląda na projekt sprzed ~10 lat (copyright 2017 w stopce, wąski layout w ramce)"]
+**Ocena wizualna:** [🔴 wysoki / 🟡 średni / ✅ niski priorytet — jedno zdanie werdyktu]
+
+| Wymiar wizualny | Status |
+|---|---|
+| Aktualność designu | [✅/🟡/🔴] |
+| Pierwsze wrażenie | [✅/🟡/🔴] |
+| Spójność marki | [✅/🟡/🔴] |
+| Wiarygodność | [✅/🟡/🔴] |
+| Świeżość treści | [✅/🟡/🔴] |
+
+*Markery:* [konkrety ze screenshota, które zadecydowały o werdykcie — np. „©2017 w stopce · teksturowane tło · wąska ramka"]
 **Względem rynku:** [powyżej / na poziomie / poniżej] mediany 21 polskich kancelarii (60/100)
 
 ---

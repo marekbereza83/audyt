@@ -8,50 +8,56 @@
 
 ## Krok 0 — Ocena wizualna (nie wchodzi do score)
 
-**Pytanie:** Czy strona *wygląda* na aktualną i zadbaną — oczami klienta, w pierwszych sekundach, zanim cokolwiek przeczyta?
+**Pytanie przewodnie:** Czy właściciel, patrząc na własną stronę, może poczuć, że przestała reprezentować jego kancelarię?
 
-Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot-mobile.png`) — nie z danych scrapera. Otwórz oba zrzuty i przejdź przez checklistę. Wynik zapisz w `audyt-dane.json` jako pole `ocenaWizualna` i w trackerze jako `priorytet_wizualny`.
+Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot-mobile.png`) — nie z danych scrapera. Wynik zapisz w `audyt-dane.json` jako pole `ocenaWizualna` i w trackerze jako `priorytet_wizualny`.
 
-### Dwie osobne osie — nie mieszaj ich
+**Czego tu NIE oceniasz:** LCP, HTTPS, CTA, SEO, H1, JSON-LD, Core Web Vitals — to już jest w score (8 wymiarów niżej). Ocena wizualna = wyłącznie to, co widać na screenshocie oczami klienta.
 
-1. **Wygląd przestarzały** — strona wygląda na starą (to jest główny sygnał zakupowy dla FORMA).
-2. **Zaniedbanie techniczne** — strona może wyglądać nowocześnie, ale ma widoczne błędy (np. komunikaty serwera, puste sekcje). To inny argument w rozmowie — odnotuj osobno, nie podnoś nim werdyktu „przestarzała".
+### 5 wymiarów wizualnych — każdy: ✅ OK / 🟡 do sprawdzenia / 🔴 problem
 
-### Checklista — wygląd przestarzały
+| # | Wymiar | Co oceniasz | Przykłady 🔴 |
+|---|---|---|---|
+| 1 | **Aktualność designu** | Czy strona wygląda współcześnie? | wąska kolumna ~960 px w ramce, teksturowane/kafelkowe tło, gradientowe przyciski, bevel/3D, stary slider na całą szerokość |
+| 2 | **Pierwsze wrażenie** | Co klient widzi w 5 sekund? | łacińska sentencja zamiast oferty, brak specjalizacji w hero, puste/nijakie hero |
+| 3 | **Spójność marki** | Czy wszystko wygląda jak jedna marka? | wyłącznie stockowe zdjęcia/clipart, mieszane fonty, przypadkowe kolory |
+| 4 | **Wiarygodność** | Czy coś obniża zaufanie? | © z dawnym rokiem, komunikaty błędów serwera, Google Sites/darmowy kreator, „PRZERWA TECHNICZNA", niedziałające elementy, opinie-atrapy („Jan Kowalski") |
+| 5 | **Świeżość treści** | Czy widać oznaki życia? | ostatni wpis bloga sprzed lat, nieaktualne informacje, puste sekcje |
 
-| Sygnał | Na co patrzeć |
-|---|---|
-| Markery epoki designu | wąski layout w ramce na kafelkowym/teksturowanym tle, twarde cienie, przyciski-zakładki, gradienty 3D → ~2008–2012; pełnoekranowe hero + grid + duża typografia → współczesne |
-| Jawne daty | rok copyright w stopce, daty wpisów na blogu, „Designed by …" — cytowalny dowód wieku |
-| Platforma | Google Sites / darmowy kreator = brak własnej strony; stary szablon (np. templatemo) |
-| Zdjęcia | prawdziwe fotografie prawników/kancelarii = inwestycja; wyłącznie stock/clipart/ikonki = szablon bez personalizacji |
-| Przestarzałe praktyki | chmura słów kluczowych SEO, licznik odwiedzin, sentencja łacińska jako jedyny przekaz hero |
-| Gęstość i typografia | mikroskopijny tekst, ściana treści bez oddechu, systemowe fonty z epoki |
+Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy serwera na świeżym szablonie) — w mailu opisz wtedy konkretny błąd/zaniedbanie, **nie sugeruj, że strona jest stara**, bo właściciel od razu zobaczy, że to nieprawda.
 
-### Checklista — zaniedbanie techniczne (osobna notatka)
+### Markery epoki (pomocnicze przy wymiarach 1 i 4)
 
-| Sygnał | Przykład |
-|---|---|
-| Błędy wypisane na stronie | komunikaty PHP/serwera („Disk quota exceeded"), błędy sesji |
-| Treści-atrapy | opinie „Jan Kowalski", lorem ipsum, pusta mapa, pusta sekcja |
-| Elementy zepsute | baner cookies zasłaniający treść, niedziałający slider, strona w trybie konserwacji |
+**Stary design:** Google Sites · WordPress z motywem 2012–2016 (np. templatemo) · teksturowe tła · gradientowe przyciski · slider na całą szerokość · chmura tagów · licznik odwiedzin · ikony 3D · układ tabelaryczny · wąska kolumna ~960 px · mikroskopijny tekst bez oddechu.
+
+**Nowoczesny design:** dużo białej przestrzeni · czytelna typografia · proste hero · wyraźna specjalizacja od wejścia · współczesne, realne zdjęcia · spójna kolorystyka.
+
+### Werdykt (`priorytet_wizualny`) — zawsze z powodami
+
+| Werdykt | Reguła | Znaczenie dla outreachu |
+|---|---|---|
+| `wysoki` | ≥2 wymiary 🔴, LUB 1 🔴 w Aktualności designu z mocnym markerem (jawna stara data, layout sprzed ~2012, darmowa platforma) | najlepszy kandydat — właściciel sam zobaczy problem |
+| `sredni` | 1 wymiar 🔴 lub ≥2 🟡 | pisać, ale hak musi być bardzo konkretny |
+| `niski` | brak 🔴, najwyżej 1 🟡 | odpuścić lub koniec kolejki — mała szansa, że właściciel poczuje potrzebę zmiany |
+| `do sprawdzenia` | screenshot nie pozwala ocenić (przerwa techniczna, błąd zrzutu) | wrócić przed wysyłką |
+
+Pod werdyktem **wypisz markery, które o nim zadecydowały** — to z nich powstaje obserwacja do maila 1. Format:
+
+```
+Ocena wizualna: 🔴 wysoki priorytet
+1. Aktualność designu:  🔴
+2. Pierwsze wrażenie:   🟡
+3. Spójność marki:      ✅
+4. Wiarygodność:        🔴
+5. Świeżość treści:     🔴
+Markery: ©2017 w stopce · teksturowane tło · wąska ramka · ostatni wpis 2019
+```
 
 ### Zastrzeżenia (żeby nie oceniać niesprawiedliwie)
 
-- **Screenshot to jedna klatka.** Puste sekcje mogą być artefaktem lazy-loadingu przy zrzucie — jeśli werdykt zależy od „pustej sekcji", sprawdź stronę na żywo zanim to napiszesz w mailu.
+- **Screenshot to jedna klatka.** Puste sekcje mogą być artefaktem lazy-loadingu przy zrzucie — jeśli werdykt (zwłaszcza wymiar 5) zależy od „pustej sekcji", sprawdź stronę na żywo, zanim to napiszesz w mailu.
 - **Sprawdź też mobile.** Stare strony najbardziej rozjeżdżają się na telefonie — desktop potrafi maskować wiek.
 - Baner cookies na zrzucie to nie zarzut — każdy go ma.
-
-### Werdykt
-
-| `priorytet_wizualny` | Kryterium | Znaczenie dla outreachu |
-|---|---|---|
-| `wysoki` | ≥2 sygnały przestarzałości LUB 1 mocny (jawna stara data, layout sprzed ~2012, darmowa platforma) | najlepszy kandydat na cold mail — właściciel sam zobaczy problem |
-| `sredni` | pojedyncze słabsze sygnały, strona „poprawna ale bez inwestycji" | pisać, ale hak musi być bardzo konkretny |
-| `niski` | strona wygląda współcześnie i zadbanie | odpuścić lub na koniec kolejki — mała szansa, że właściciel poczuje potrzebę zmiany |
-| `do sprawdzenia` | screenshot nie pozwala ocenić (przerwa techniczna, błąd zrzutu) | wrócić przed wysyłką |
-
-Do werdyktu dopisz **2–3 zdania uzasadnienia z konkretami ze screenshota** (co dokładnie widać i gdzie) — to z nich powstaje obserwacja do maila 1.
 
 ---
 

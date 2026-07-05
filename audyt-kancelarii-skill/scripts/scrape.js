@@ -4,6 +4,7 @@
  * Użycie:
  *   node scrape.js <url> [<url-konkurenta>]    — pojedyncza strona (+ opcjonalny konkurent)
  *   node scrape.js --peek <url>                — Etap 0: tylko screenshot (bez Firecrawl), kwalifikacja wizualna
+ *   node scrape.js --peek-batch <lista.csv>    — Etap 0 wsadowo (CSV: nazwa,url), max 8 równolegle (sam Playwright)
  *   node scrape.js --batch <lista.csv>         — tryb wsadowy (CSV: nazwa,url), max 3 równolegle
  * Wymaga: FIRECRAWL_API_KEY w .env lub w env, zainstalowany chromium (npx playwright install chromium)
  *
@@ -31,8 +32,10 @@ if (!arg1) {
 }
 
 // Domena → nazwa katalogu w output/ (ta sama logika co w batch-report.js)
+// Usuwa query string/fragment PRZED sanityzacją — Windows nie pozwala na ?/& w nazwach
+// folderów, a linki z Google Business Profile często mają doklejone ?utm_source=... itd.
 function domainOf(u) {
-  return u.replace(/^https?:\/\//, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
+  return u.replace(/^https?:\/\//, '').replace(/[?#].*$/, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
 }
 function outDirFor(u) {
   const d = path.join(__dirname, '..', 'output', domainOf(u));
@@ -517,12 +520,55 @@ async function runBatch(csvPath) {
   console.log('a na końcu: node batch-report.js ' + path.basename(csvPath) + '  → output/batch-fragments.csv');
 }
 
+// ── Etap 0 wsadowo: tylko screenshoty (bez Firecrawl/Lighthouse) — max 8 równolegle.
+//    Wyższa współbieżność niż --batch, bo to sam Playwright: nie ma limitu Firecrawl
+//    ani muteksu Lighthouse do respektowania.
+async function runPeekBatch(csvPath) {
+  const rows = parseCsv(fs.readFileSync(csvPath, 'utf8'));
+  if (rows.length === 0) {
+    console.error('CSV pusty lub bez poprawnych wierszy (oczekiwane kolumny: nazwa,url).');
+    process.exit(1);
+  }
+  const total = rows.length;
+  console.log(`Etap 0 wsadowo: ${total} kancelarii, max 8 równolegle.\n`);
+
+  let started = 0, ok = 0, failed = 0;
+  const queue = [...rows];
+  async function worker() {
+    while (queue.length) {
+      const row = queue.shift();
+      const n = ++started;
+      try {
+        const { shot } = await peekScreenshot(row.url);
+        ok++;
+        console.log(`[${n}/${total}] ✓ ${row.url} (${row.nazwa}) → ${path.relative(path.join(__dirname, '..'), shot)}`);
+      } catch (e) {
+        failed++;
+        console.error(`[${n}/${total}] ✗ ${row.url} (${row.nazwa}) — ${e.message}`);
+        try { fs.writeFileSync(path.join(outDirFor(row.url), 'scrape-error.txt'), e.message); }
+        catch (_) { /* niepoprawna domena — pomijamy marker */ }
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(8, total) }, () => worker()));
+
+  console.log(`\nGotowe: ${ok} OK, ${failed} błędów (z ${total}).`);
+  console.log('Dalej: Claude ogląda każdy screenshot-peek.png i ocenia priorytet_wizualny (kryteria-audytu.md → Krok 0).');
+}
+
 // ── Dispatch ────────────────────────────────────────────────────────
 (async () => {
   if (arg1 === '--batch') {
     const csvPath = process.argv[3];
     if (!csvPath) { console.error('Użycie: node scrape.js --batch <lista.csv>'); process.exit(1); }
     await runBatch(csvPath);
+    return;
+  }
+
+  if (arg1 === '--peek-batch') {
+    const csvPath = process.argv[3];
+    if (!csvPath) { console.error('Użycie: node scrape.js --peek-batch <lista.csv>'); process.exit(1); }
+    await runPeekBatch(csvPath);
     return;
   }
 

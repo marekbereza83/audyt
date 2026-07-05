@@ -25,7 +25,7 @@ if (!csvPath) { console.error('Użycie: node batch-report.js <lista.csv>'); proc
 
 // ── helpery ───────────────────────────────────────────────────────────
 function domainOf(u) {
-  return u.replace(/^https?:\/\//, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
+  return u.replace(/^https?:\/\//, '').replace(/[?#].*$/, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
 }
 
 function parseCsv(text) {

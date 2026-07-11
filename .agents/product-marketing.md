@@ -111,6 +111,32 @@ Research signal do **maila 1** = jedna konkretna, możliwa do zweryfikowania obs
 
 Efekt, o który chodzi: żeby właścicielka/właściciel kancelarii **sam pomyślał** „chyba faktycznie czas coś zrobić ze stroną" — nie żeby odbiorca pomyślał „ten facet sprzedaje optymalizację SEO/szybkości".
 
+### Zasada nadrzędna: nie bądź copywriterem, bądź uważnym rozmówcą
+
+**To jest test nadrzędny wobec wszystkich reguł niżej.** Wyobraź sobie, że jesteś właścicielem niewielkiego studia projektowego, który naprawdę obejrzał stronę tej kancelarii i pisze jeden normalny mail. Nie prowadzisz kampanii marketingowej. Nie przekonujesz kancelarii, że potrzebuje nowej strony — to jest oczywiste i nie wymaga argumentacji. Masz być osobą, która coś zauważyła, nie audytorem, który dostarcza wnioski.
+
+**Trzy testy przed wysłaniem każdego maila. Jedno „nie" = napisz od nowa:**
+1. Czy ten mail mógłby wysłać dowolny software house?  → jeśli TAK, od nowa.
+2. Czy odbiorca uwierzy, że naprawdę obejrzałem jego stronę? → jeśli NIE, od nowa.
+3. Czy brzmi jak wiadomość od konkretnego człowieka? → jeśli NIE, od nowa.
+
+**Zakazane ruchy (każdy z nich brzmi jak agencja — wyłapane na realnych mailach z tego repo):**
+
+| Ruch | Przykład (realny, do NIE powtarzania) | Dlaczego to błąd |
+|---|---|---|
+| **Zdanie konsekwencji** | „przez co klient wraca do wyników", „to kosztuje kancelarię kontakty każdego tygodnia", „Google spycha stronę niżej" | Argumentowanie, dlaczego obserwacja jest ważna. Człowiek, który coś zauważył, nie argumentuje — mówi, co zauważył, i pyta. Argumentuje handlowiec. |
+| **Zdanie rozwiązania** | „to drobna poprawka, nie przebudowa", „wyniki widać szybko", „to najbardziej opłacalna zmiana" | To już oferta. Domyka perswazję w mailu, który miał tylko otworzyć rozmowę. |
+| **Kanapka komplementowa** | „Jest dobrze zbudowana: ma X i Y. Jest jednak jeden problem…" | Rozpoznawalna technika copywriterska; „jeden problem" to wprost ocenianie strony. |
+| **Temat-diagnoza** | „Strona kancelarii ładuje się 22 sekundy — to niweluje efekty bloga i SEO" | Temat sprzedaje i ocenia, zanim mail zostanie otwarty. |
+| **Ocenianie / krytyka** | „Państwa strona jest…", „zauważyłem błędy", „brakuje…", „to należy poprawić" | Budzi naturalny opór. Zamiast tego: „Zwróciłem uwagę na…", „Zastanawiam się…", „Mam wrażenie…". |
+| **Mail o mnie** | „projektuję…", „tworzę…", „specjalizuję się…", „oferuję…" | Mail ma być o kancelarii, nie o FORMA. (Wyjątek: **jedno** zdanie różnicujące w mailu 3 lub 4 — patrz łuk niżej.) |
+| **Marketingowe przymiotniki** | profesjonalny, nowoczesny, skuteczny, wyjątkowy, premium, innowacyjny, kompleksowy, najwyższa jakość, wyróżniający | Język copywritera. Jeśli można usunąć przymiotnik i zdanie nadal działa — usuń go. |
+| **Obietnice efektu** | „zwiększy liczbę klientów", „poprawi konwersję", „wyróżni kancelarię na tle konkurencji" | Sprzedaż + ryzyko naruszenia etyki zawodowej (patrz „Zasady etyki zawodowej"). |
+| **Pytanie retoryczne** | „Czy specjalizacja nie powinna rzucać się w oczy od razu?" | Diagnoza przebrana za pytanie. Pytanie ma zostawiać właścicielowi wyjście z twarzą: „Czy to celowy wybór, czy strona po prostu tak została od początku?" |
+| **Ten sam otwieracz w każdym mailu** | „Sprawdziłem stronę kancelarii." (21/21 fragmentów) | Przy skali widać szablon; „sprawdziłem" to czasownik audytora. Różnicuj wejście w obrębie batcha. |
+
+**Skąd się bierze „agencyjność":** mail dziedziczy strukturę raportu. `fakt → konsekwencja → rozwiązanie` to zasada **`audyt.md`** (patrz `CLAUDE.md` → Zasady) — w mailu każdy takt po samym fakcie jest już sprzedażą. W mailu obowiązuje: **obserwacja kończy się na obserwacji.**
+
 **Zasady dla całej async sekwencji (mail 1 → follow-upy, przed jakąkolwiek odpowiedzią odbiorcy):**
 - **Zakazane słowa/pojęcia w całej sekwencji** (łącznie z mailem 1 — nawet przetłumaczone na „skutek dla klienta" nie wchodzą do treści maila): LCP, HTTPS, SSL, cache, JSON-LD, schema, meta description, benchmark, mediana, %/procent, sekundy ładowania, viewport, H1. Jeśli któreś pojawi się w wygenerowanym mailu — to błąd, przepisz. Te terminy żyją tylko w `audyt.md` (wewnętrzny) i w **rozmowie po odpowiedzi** odbiorcy.
 - Mail 1: jedna konkretna, weryfikowalna obserwacja + jedno pytanie otwarte, koniec — nie ogólnikowa opinia o wrażeniu. Obserwacja ma nazywać coś, co odbiorca może sam sprawdzić na własnej stronie (cytat nagłówka, konkretny element), nie parametr wydajności — źródło: `mail-fragment.txt`, który sam już jest w tym nietechnicznym, ale konkretnym języku (patrz `audyt-kancelarii-skill/SKILL.md` → Krok 5). **Nie kwestionuj tam decyzji, która mogła być świadoma** (fraza SEO w nagłówku, brak nazwisk przy opiniach) — wybieraj fakty o układzie informacji, nie oceny strategii właściciela (pełne rozróżnienie w `SKILL.md` → Krok 5).
@@ -131,10 +157,20 @@ Ten łuk zastępuje domyślny framework `cold-email` dla kontekstu FORMA (ogóln
 
 ## CTA preferowane (one ask, low friction)
 
-Nie proponuj spotkania/rozmowy 30-min w pierwszym mailu. Preferowane:
+Nie proponuj spotkania/rozmowy 30-min w pierwszym mailu.
+
+**W mailu 1 CTA = samo pytanie otwarte z `mail-fragment.txt`.** Nie doklejaj drugiego wezwania pod spodem — pytanie *jest* wezwaniem. Mail 1 ma wywołać odpowiedź, nie sprzedaż.
+
+W dalszych mailach, jeśli potrzeba osobnego CTA:
 - „Czy to temat, o którym warto porozmawiać?"
-- „Chętnie prześlę pełną analizę — zainteresowani?"
 - Alternatywa: bezpośredni telefon 512 407 191.
+
+**Zakazane CTA — pozycjonują FORMA jako firmę od audytów, a nie od stron:**
+- ❌ „Chętnie prześlę pełną analizę / pełne wyniki audytu"
+- ❌ „Jeśli jest Pan ciekaw pełnych wyników — chętnie rozmawiam"
+- ❌ „Chętnie pokażę, co jeszcze wyszło w analizie"
+
+Audyt jest wewnętrzny. Odbiorca nie ma się dowiedzieć, że istnieje — ma odpisać na obserwację.
 
 ## Zasada anty-powtarzalności (temat + zdanie otwierające)
 

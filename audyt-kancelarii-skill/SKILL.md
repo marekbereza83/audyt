@@ -94,6 +94,25 @@ Format: **jedna konkretna, możliwa do zweryfikowania obserwacja wynikająca z a
 
 Język: taki, jakim mogłaby to napisać osoba patrząca na stronę oczami klienta — nie audytor. Zero terminów technicznych (LCP, HTTPS, SSL, cache, JSON-LD, schema, meta description, benchmark, mediana, %, sekundy ładowania, viewport, H1) — nawet przetłumaczonych na „skutek dla klienta". Pytanie ma zapraszać do odpowiedzi, nie ujawniać diagnozy.
 
+**Rola: uważny rozmówca, nie copywriter i nie audytor.** Piszesz jako właściciel małej pracowni projektowej, który naprawdę wszedł na tę stronę i coś mu się rzuciło w oczy. Nie prowadzisz kampanii — piszesz jedną normalną wiadomość. Odbiorca po przeczytaniu ma pomyśleć „ktoś naprawdę wszedł na moją stronę", a nie „dostałem kolejny szablon".
+
+**Obserwacja kończy się na obserwacji.** Zasada `fakt → konsekwencja → rozwiązanie` obowiązuje w raporcie `audyt.md` — **nie w mailu**. W mailu każdy takt po samym fakcie jest już sprzedażą, dlatego oba są zakazane:
+- ❌ **Zdanie konsekwencji** — „przez co klient wraca do wyników", „to kosztuje kancelarię kontakty", „klient zamknie kartę, zanim…", „Google pokaże stronę niżej". To argumentowanie, dlaczego obserwacja jest ważna. Człowiek, który coś zauważył, nie argumentuje — mówi, co zauważył, i pyta. Argumentuje handlowiec.
+- ❌ **Zdanie rozwiązania** — „to drobna poprawka, nie przebudowa", „wyniki widać szybko", „to najbardziej opłacalna zmiana". To już oferta. Domyka perswazję w pierwszej wiadomości, która miała tylko otworzyć rozmowę.
+
+**Czego jeszcze nie robić** (wzorce wyłapane na realnych mailach — każdy z nich brzmi jak agencja):
+- ❌ **Kanapka komplementowa** — „Jest dobrze zbudowana: ma X i Y. Jest jednak jeden problem…". Rozpoznawalna technika copywriterska, a „jeden problem" to wprost ocenianie strony.
+- ❌ **Ocenianie i krytyka** — „to jest źle", „to należy poprawić", „brakuje", „strona wygląda słabo", „zauważyłem błędy". Zamiast tego: „Zwróciłem uwagę na…", „Zastanawiam się…", „Mam wrażenie…".
+- ❌ **Marketingowe przymiotniki** — profesjonalny, nowoczesny, skuteczny, wyjątkowy, premium, innowacyjny, kompleksowy, najwyższa jakość, wyróżniający. Jeśli można usunąć przymiotnik i zdanie nadal działa — usuń go.
+- ❌ **Mail o mnie** — „projektuję…", „tworzę…", „specjalizuję się…", „oferuję…". Fragment ma być o kancelarii, nie o FORMA.
+- ❌ **Więcej niż jedna obserwacja.** Jedna. Nie pięć, nie audyt.
+
+**Otwarcie: różnicuj.** Nie zaczynaj każdego fragmentu tym samym zdaniem — przy wysyłce do kilkudziesięciu kancelarii identyczny otwieracz („Sprawdziłem stronę kancelarii.") sam w sobie zdradza szablon, a „sprawdziłem" to czasownik audytora („przeprowadziłem kontrolę"), nie kogoś, kto po prostu wszedł i zobaczył. Wejdź od razu w to, co widać, albo od naturalnego wejścia na stronę — np. „Trafiłem na stronę Pana kancelarii i…", „Otworzyłem stronę kancelarii — pierwsze, co widać, to…", „Zajrzałem na stronę kancelarii; zwróciłem uwagę na…". W obrębie jednego batcha pilnuj, żeby otwarcia się nie powtarzały dosłownie.
+
+**Pytanie musi być naprawdę otwarte** — nie może zawierać werdyktu.
+- ❌ Pytanie z ukrytą diagnozą (retoryczne): „Czy specjalizacja nie powinna rzucać się w oczy od razu?", „Czy warto by pokazać to już na pierwszym ekranie?" — odpowiedź jest w pytaniu, więc to zakamuflowana rekomendacja.
+- ✅ Pytanie zostawiające właścicielowi wyjście z twarzą: „Czy to celowy wybór, czy strona po prostu tak została od początku?", „Czy to zamierzony efekt?", „Czy strona była odświeżana od tamtego czasu?"
+
 **Hierarchia hooków — wybieraj z najwyższej kategorii, w której coś się znajdzie.** Nie wszystkie sygnały „widoczne na screenshocie" są sobie równe: jedne dominują pierwsze wrażenie, inne trzeba zauważyć i zinterpretować. Cztery kategorie, malejąca siła:
 
 1. ⭐⭐⭐⭐⭐ **Pierwsze wrażenie (pierwsze 2–3 sekundy).** To, co nowy klient widzi natychmiast, zanim zacznie cokolwiek czytać. Przykłady: hero wygląda na projekt sprzed kilkunastu lat, kolaż kilku niepowiązanych zdjęć, drewniane tło/tekstura marmuru (skeuomorfizm), łacińska sentencja zamiast informacji o ofercie, Google Sites, komunikat „Przerwa techniczna", slider z pięciu zdjęć, stockowe zdjęcie młotka. Test: właściciel patrzy na własną stronę i myśli „Rzeczywiście… tak to wygląda." **Wybieraj zawsze, jeśli coś z tej kategorii istnieje** — nic niżej jej nie przebija.
@@ -113,8 +132,13 @@ Przykłady tłumaczenia:
 - „H1 = angielski slogan bez konkretu" → zacytuj dosłownie ten nagłówek: „Nagłówek na stronie głównej brzmi »Leading Law Firm in Poland« — nie mówi wprost, jakimi sprawami zajmuje się kancelaria."
 - „stary szablon, copyright 2017" → „Stopka strony pokazuje `© 2017` — od tamtej pory strona wygląda na nieodświeżaną." (kategoria 4 — użyj tylko, gdy nic z kategorii 1–3 nie występuje na tej stronie)
 
-Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie):
-> Sprawdziłem stronę kancelarii. [Konkretna, cytowalna/weryfikowalna obserwacja o tej stronie]. [Jedno pytanie otwarte].
+Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie — i **nic poza tym**):
+> [Naturalne wejście, za każdym razem inne]. [Konkretna, cytowalna/weryfikowalna obserwacja o tej stronie]. [Jedno pytanie otwarte].
+
+**Test jakości — zadaj sobie te trzy pytania przed zapisaniem pliku. Jedno „nie" = napisz od nowa:**
+1. Czy ten fragment mógłby wysłać dowolny software house? Jeśli TAK — od nowa.
+2. Czy odbiorca uwierzy, że naprawdę obejrzałem jego stronę? Jeśli NIE — od nowa.
+3. Czy brzmi jak wiadomość od konkretnego człowieka, a nie z kampanii? Jeśli NIE — od nowa.
 
 `mail-fragment.txt` to jedyny touchpoint audytu w cold mailu — nie gotowy mail i nie brief techniczny na całą sekwencję. Finalną treść maila 1 oraz całą sekwencję follow-upów (bez odwołań do audytu od maila 2) pisze skill `cold-email` z oficjalnego repo marketingskills (`.agents/skills/cold-email`), zgodnie z zasadami w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
 

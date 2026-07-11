@@ -85,7 +85,8 @@ node batch-report.js lista.csv   # → output/batch-fragments.csv
 
 ## Zasady, których nie łam
 
-1. **Ton: fakt → konsekwencja → rozwiązanie.** Nigdy „beznadziejna strona" ani ocena kompetencji.
+1. **Ton raportu: fakt → konsekwencja → rozwiązanie.** Nigdy „beznadziejna strona" ani ocena kompetencji.
+   - **Ten trójtakt obowiązuje wyłącznie w `audyt.md`. NIE w mailu.** W cold mailu zdanie konsekwencji („przez co klient wraca do wyników") i zdanie rozwiązania („to drobna poprawka, nie przebudowa") to już sprzedaż — mail 1 ma tylko otworzyć rozmowę. W mailu: **obserwacja kończy się na obserwacji + jedno pytanie otwarte.** Pełna lista zakazanych ruchów: `.agents/product-marketing.md` → „Zasada nadrzędna: nie bądź copywriterem, bądź uważnym rozmówcą".
 2. **Każda ocena z danych** — z pola w `content.json`/`vitals.json` lub screenshota, nie z pamięci.
    - `content.json` opisuje tylko **stronę główną**. Specjalizacja może być na podstronie usług — scraper dociąga ją automatycznie do `servicesPage`. Nie oceniaj „brak specjalizacji" bez sprawdzenia `servicesPage.practiceAreaCount`.
    - Screenshot ma pierwszeństwo nad surowym licznikiem scrapera: `ctaCount=0` nie oznacza „brak CTA", jeśli na screenshocie widać przycisk.

@@ -51,10 +51,12 @@ Kluczowe pola i jak mapują na wymiary audytu:
 | `trustSignals.count` | 6 — Zaufanie (15) | ≥2 → ✅; 1 (np. anonimowa opinia) → ⚠️; 0 → ❌ |
 | `ethicsFlags[]` | 8 — Etyka (5) | niepuste → ❌; puste → ✅ |
 | `metaDescription`, `hasStructuredData` | 7 — SEO (10) | brak desc lub JSON-LD → ⚠️; brak obu lub brak H1 → ❌ |
-| `ageSignals` (copyrightYear, generator, templateHints) | Ocena leada — P2/P5 | ślady wieku/zaniedbania: stary copyright, stary szablon (templatemo), CMS w `<meta generator>` |
-| `ageSignals`+`servicesPage`+`trustSignals.team` | Ocena leada — P1/P3 | rozdźwięk status⇄strona i budżet — patrz `kryteria-audytu.md` → „Ocena leada" (5 pytań) |
+| `ageSignals` (copyrightYear, generator, templateHints) | Ocena leada — A | ślady wieku/zaniedbania: stary copyright, stary szablon (templatemo), CMS w `<meta generator>` |
+| `teamPage` (lawyerCount, titles, corporateClients, locationCount) | Ocena leada — B | scraper dociąga podstronę „Zespół"/„O kancelarii"; bez niej wymiar B (potencjał finansowy) nie ma się z czego wziąć poza domysłem |
+| `newsPage` (lastPostDate, lataOdWpisu) | Ocena leada — D | scraper dociąga podstronę „Aktualności"/„Blog"; data ostatniego wpisu to najtwardszy dowód „strona stoi" |
+| `ageSignals`+`servicesPage`+`teamPage` | Ocena leada — A/C | rozdźwięk status⇄strona — patrz `kryteria-audytu.md` → „Ocena leada" (4 wymiary A/B/C/D) |
 
-Pełne kryteria z progami: `reference/kryteria-audytu.md`. Ocena leada (5 pytań kwalifikujących, P1 ⭐ waga podwójna) to **wewnętrzna** kwalifikacja — nigdy nie trafia do `mail-fragment.txt`.
+Pełne kryteria z progami: `reference/kryteria-audytu.md`. Ocena leada (4 wymiary A–D, suma 0–8, próg zapisu 7–8 = `PISAĆ`) to **wewnętrzna** kwalifikacja — nigdy nie trafia do `mail-fragment.txt`. Rodzynki 7–8/8 trafiają do zakładki „Claude_import" arkusza trackera przez `scripts/push-import.js` (patrz `sheets/README.md`).
 
 ## Model danych — co jest w vitals.json
 

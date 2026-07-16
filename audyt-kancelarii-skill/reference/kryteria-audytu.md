@@ -65,6 +65,96 @@ Markery: ©2017 w stopce · teksturowane tło · wąska ramka · ostatni wpis 20
 
 ---
 
+## Ocena leada — 4 wymiary, 0–8 (kwalifikacja wewnętrzna, poza score)
+
+**To nie jest ocena strony — to ocena szansy sprzedaży.** Zapisywana w trackerze jako
+`scoring_0_8` + `decyzja`. **Nigdy nie trafia do `mail-fragment.txt` ani do maila** — odbiorca
+nie ma wiedzieć, że go punktujemy.
+
+**Pytanie przewodnie:** czy właściciel tej kancelarii ma widoczny, biznesowo uzasadniony powód,
+żeby zapłacić **4 500–6 500 zł** za nową stronę?
+
+Nie szukamy dowolnych błędów. Strona nie dostaje wysokiej oceny za to, że wygląda staro —
+`priorytet_wizualny` z Kroku 0 jest **materiałem** do wymiaru A, a nie samym A.
+
+### Kolejność pracy
+
+Oceniaj z danych scrapera i zrzutów, nie z pamięci — kolejno:
+`screenshot-desktop.png` + `screenshot-mobile.png` → `content.json` (hero, kontakt, `ageSignals`)
+→ `servicesPage` → `teamPage` → `newsPage` → `vitals.json`. Fakty oddzielaj od przypuszczeń:
+pole puste w danych to „nie wiem", nie „nie ma".
+
+### Wymiary
+
+| | Wymiar | 0 | 1 | 2 |
+|---|---|---|---|---|
+| **A** | **Potrzeba przebudowy** | tylko kosmetyka | widoczne niedoskonałości | wyraźna potrzeba nowej strony |
+| **B** | **Potencjał finansowy** | brak widocznych sygnałów | stabilna mała kancelaria | zespół, obsługa firm, profesjonalne materiały, rozbudowana działalność lub kilka lokalizacji |
+| **C** | **Skala możliwej poprawy** | niewielka | umiarkowana | duża i łatwa do pokazania |
+| **D** | **Naturalny powód do kontaktu** | trzeba go wymyślać | istnieje, ale przeciętny | konkretny, prawdziwy i charakterystyczny |
+
+Skąd brać dane do każdego wymiaru:
+
+| Wymiar | Główne źródło | Uwaga |
+|---|---|---|
+| A | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ A2, `sredni` ≈ A1, `niski` ≈ A0. To punkt wyjścia, nie automat |
+| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2 |
+| C | różnica między tym, czym kancelaria jest (B), a tym, co pokazuje strona (A) | „łatwa do pokazania" = dasz się to opisać w jednym zdaniu maila |
+| D | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1 |
+
+**A i C są skorelowane** (duża potrzeba ≈ duża poprawa) — to normalne i zamierzone. Praktyczny
+skutek: 7 pkt oznacza w praktyce A2 + C2 + B2 + D≥1, czyli **rozbudowaną kancelarię ze słabą
+stroną**. Spodziewaj się kilku procent trafień na paczkę.
+
+### Werdykt
+
+| Suma | `decyzja` | Co robimy |
+|---|---|---|
+| **7–8** | `PISAĆ` | rodzynek → zapis do `Claude_import` |
+| 5–6 | — | **nie zapisujemy do arkusza**; loguj lokalnie w `output/odrzucone.csv`, żeby nie audytować drugi raz |
+| 0–4 | `ODPUŚCIĆ` | tylko log lokalny |
+
+Format zapisu pod werdyktem — zawsze z rozbiciem, bo z niego widać, czy 7 nie powstało z natęgi:
+
+```
+Ocena leada: 7/8 → PISAĆ
+A. Potrzeba przebudowy:   2  (Google Sites, brak mobile)
+B. Potencjał finansowy:   2  (4 prawników, obsługa firm, 2 lokalizacje)
+C. Skala poprawy:         2  (zespół i oferta w ogóle niewidoczne)
+D. Powód do kontaktu:     1  (ostatni wpis 2019 — prawdziwy, ale przeciętny)
+```
+
+### Mocne sygnały (podbijają B i C)
+
+Rozbudowana kancelaria z bardzo słabą witryną · strona wyraźnie odstaje od poziomu kancelarii ·
+istotne usługi trudne do znalezienia · realne błędy techniczne · strona źle działa na telefonie ·
+profesjonalne zdjęcia lub identyfikacja zmarnowane przez słaby projekt · nieczytelna prezentacja
+zespołu lub specjalizacji · kancelaria obsługuje firmy / ma zespół / kilka lokalizacji, ale strona
+tego nie komunikuje.
+
+### Słabe sygnały — NIE wystarczają (to jest `co_jest_kosmetyka`)
+
+Stary copyright · przeciętne ikony · sam wiek strony · jeden kolor lub zdjęcie stockowe · dużo
+pustego miejsca · drobna typografia · brak „nowoczesnego wyglądu" · ciekawy cytat · pojedynczy
+kosmetyczny problem.
+
+Te rzeczy **wypisz w polu `co_jest_kosmetyka`** — to lista, której drugi asystent **nie ma prawa**
+użyć jako argumentu sprzedażowego. Sam stary copyright nie daje A2. Jeśli po odjęciu kosmetyki
+nie zostaje nic — to nie jest lead.
+
+### Brak danych
+
+Strona niedostępna albo widziałeś tylko fragment → **nie oznaczaj jako PISAĆ**. W raporcie:
+`OCENA WSTĘPNA — ZA MAŁO DANYCH`. Nie uzupełniaj pól przypuszczeniami i nie wymyślaj danych
+kontaktowych — puste pole jest lepsze niż zgadnięte.
+
+### Zasada końcowa
+
+**Lepiej nie zapisać średniego leada niż stworzyć sztuczny argument sprzedażowy.**
+Do `Claude_import` trafiają wyłącznie wyjątkowo mocne, nowe przypadki.
+
+---
+
 ## 1. Jasność specjalizacji (waga 15)
 
 **Pytanie:** Czy klient w ciągu kilkunastu sekund wie, czym zajmuje się kancelaria i czy pasuje do jego sprawy?

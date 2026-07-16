@@ -11,6 +11,8 @@
  * Zwraca do output/<domena>/:
  *   content.json          — markdown, nagłówki, meta, CTA, formularze, dane kontaktowe
  *                           + servicesPage: dociągnięta podstrona „Zakres usług" (specjalizacja z treści, nie z hero)
+ *                           + teamPage: dociągnięta podstrona „Zespół" (prawnicy, tytuły, obsługa firm, lokalizacje — wymiar B oceny leada)
+ *                           + newsPage: dociągnięta podstrona „Aktualności" (data ostatniego wpisu — wymiar D oceny leada)
  *                           + ageSignals: ślady wieku/zaniedbania (copyright, generator, stary szablon) dla oceny leada
  *   vitals.json           — Core Web Vitals + performance score + https + mobile
  *   screenshot-desktop.png, screenshot-mobile.png
@@ -79,8 +81,44 @@ const SERVICES_SLUG = [
 ];
 const ASSET_EXT = /\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?)$/i;
 
+// ── Podstrona „Zespół / O kancelarii" ────────────────────────────────
+// Żywi wymiar B oceny leada (potencjał finansowy): ilu prawników, jakie tytuły, czy obsługują
+// firmy, ile lokalizacji. Tego nie widać ze strony głównej, a to najsłabiej widoczny wymiar.
+const TEAM_NAV = [
+  /^\s*zespół\s*$/i,
+  /nasz\s+zespół|nasi\s+prawnicy/i,
+  /o\s+(nas|mnie|kancelarii)/i,
+  /^\s*(adwokaci|radcowie|prawnicy)\s*$/i,
+  /^\s*kancelaria\s*$/i,
+];
+const TEAM_SLUG = [
+  /(zespol|zespół|team)/i,
+  /o-(nas|mnie|kancelarii)/i,
+  /(prawnicy|adwokaci|radcowie)/i,
+  /(about|o-kancelarii)/i,
+  /^\/kancelaria/i,
+];
+
+// ── Podstrona „Aktualności / Blog" ───────────────────────────────────
+// Żywi wymiar D (naturalny powód do kontaktu) i wymiar 5 Kroku 0 (świeżość treści):
+// data ostatniego wpisu to najtwardszy dowód „strona stoi".
+const NEWS_NAV = [
+  /aktualnoś/i,
+  /^\s*blog\s*$/i,
+  /^\s*(nowości|wiadomości)\s*$/i,
+  /publikacj|artykuł/i,
+  /porady\s+prawne/i,
+];
+const NEWS_SLUG = [
+  /(aktualnosci|aktualności)/i,
+  /\/blog/i,
+  /(news|nowosci)/i,
+  /(publikacj|artykul|porady)/i,
+];
+
 // (1) Próba z linków strony głównej — działa na nowoczesnych stronach, bez dodatkowego wywołania API.
-function findServicesUrl(homeMd, baseUrl) {
+// `zajete` — URL-e przypisane już innej podstronie (np. „Oferta" nie ma być zarazem „Zespołem").
+function findSubpageUrl(homeMd, baseUrl, navPatterns, zajete) {
   let baseHost;
   try { baseHost = new URL(baseUrl).host; } catch { return null; }
   const homeNorm = baseUrl.replace(/\/+$/, '');
@@ -96,10 +134,11 @@ function findServicesUrl(homeMd, baseUrl) {
     if (abs.host !== baseHost) continue;                       // tylko ta sama domena
     if (abs.href.replace(/\/+$/, '') === homeNorm) continue;   // nie strona główna
     if (ASSET_EXT.test(abs.pathname)) continue;
+    if (zajete && zajete.has(abs.href)) continue;
     links.push({ text, url: abs.href });
   }
-  // Preferuj wg kolejności SERVICES_NAV; w obrębie grupy — pierwszy trafiony link.
-  for (const pat of SERVICES_NAV) {
+  // Preferuj wg kolejności wzorców; w obrębie grupy — pierwszy trafiony link.
+  for (const pat of navPatterns) {
     const hit = links.find(l => pat.test(l.text));
     if (hit) return hit.url;
   }
@@ -108,23 +147,29 @@ function findServicesUrl(homeMd, baseUrl) {
 
 // (2) Fallback: Firecrawl mapUrl — gdy menu jest budowane JS/ramkami i nie ma go w linkach
 // (typowe dla starszych stron kancelarii). Dopasowuje po slugu ścieżki, nie po anchor-tekście.
-async function findServicesUrlViaMap(app, baseUrl) {
+// `cache` — mapa domeny pobierana raz na kancelarię, nie raz na podstronę.
+async function findSubpageUrlViaMap(app, baseUrl, slugPatterns, cache, zajete) {
   let baseHost, homeNorm;
   try { baseHost = new URL(baseUrl).host; homeNorm = baseUrl.replace(/\/+$/, ''); } catch { return null; }
-  let res;
-  try { res = await app.mapUrl(baseUrl); } catch { return null; }
-  const raw = res?.links || res?.urls || (Array.isArray(res) ? res : []);
-  const urls = raw.map(x => (typeof x === 'string' ? x : x?.url)).filter(Boolean);
+
+  if (!cache.urls) {
+    let res;
+    try { res = await app.mapUrl(baseUrl); } catch { res = null; }
+    const raw = res?.links || res?.urls || (Array.isArray(res) ? res : []);
+    cache.urls = raw.map(x => (typeof x === 'string' ? x : x?.url)).filter(Boolean);
+  }
+
   const cands = [];
-  for (const u of urls) {
+  for (const u of cache.urls) {
     let abs;
     try { abs = new URL(u); } catch { continue; }
     if (abs.host !== baseHost) continue;
     if (abs.href.replace(/\/+$/, '') === homeNorm) continue;
     if (ASSET_EXT.test(abs.pathname)) continue;
+    if (zajete && zajete.has(abs.href)) continue;
     cands.push(abs);
   }
-  for (const pat of SERVICES_SLUG) {
+  for (const pat of slugPatterns) {
     const hit = cands.find(a => pat.test(a.pathname));
     if (hit) return hit.href;
   }
@@ -202,15 +247,108 @@ function detectAgeSignals(md, html) {
   return { copyrightYear, generator, templateHints: uniqHints, signals, count: signals.length };
 }
 
-async function fetchServicesPage(app, homeMd, baseUrl) {
-  let url = findServicesUrl(homeMd, baseUrl);
+// ── Ekstraktory treści podstron ──────────────────────────────────────
+
+function extractServices(md) {
+  const practiceAreas = detectPracticeAreas(md);
+  return { practiceAreas, practiceAreaCount: practiceAreas.length };
+}
+
+const IMIE_NAZWISKO = /\b([A-ZŁŚŻŹĆĄĘÓŃ][a-złśżźćąęóń]{2,})\s+([A-ZŁŚŻŹĆĄĘÓŃ][a-złśżźćąęóń]{2,}(?:-[A-ZŁŚŻŹĆĄĘÓŃ][a-złśżźćąęóń]{2,})?)\b/;
+const TYTULY = ['adwokat', 'radca prawny', 'aplikant adwokacki', 'aplikant radcowski',
+                'notariusz', 'doradca podatkowy', 'rzecznik patentowy', 'mediator'];
+
+/**
+ * Zespół — surowe fakty do wymiaru B. Nie interpretuje: liczy nazwiska, zbiera tytuły,
+ * sprawdza ślad obsługi firm i liczbę lokalizacji (po odrębnych kodach pocztowych).
+ */
+function extractTeam(md) {
+  // Nazwiska: z nagłówków (typowa karta prawnika) + sąsiedztwo tytułu zawodowego.
+  const nazwiska = new Set();
+  const H = extractHeadings(md);
+  [...H.h2, ...H.h3].forEach(h => {
+    const czysty = h.replace(/\|/g, ' ').trim();
+    const m = czysty.match(IMIE_NAZWISKO);
+    // nagłówek będący *tylko* nazwiskiem (ew. z tytułem) — nie zdanie zawierające nazwisko
+    if (m && czysty.length <= 60) nazwiska.add(m[0]);
+  });
+  const tytulRe = new RegExp('(?:' + TYTULY.join('|') + ')\\s+' + IMIE_NAZWISKO.source, 'gi');
+  let t;
+  while ((t = tytulRe.exec(md)) !== null) nazwiska.add((t[1] + ' ' + t[2]).trim());
+
+  const titles = TYTULY.filter(x => new RegExp('\\b' + x + '\\b', 'i').test(md));
+
+  // Lokalizacje: odrębne kody pocztowe (00-000). Oddziały bywają jedynym śladem skali.
+  const kody = new Set((md.match(/\b\d{2}-\d{3}\b/g) || []));
+
+  return {
+    lawyerCount: nazwiska.size,
+    lawyers: [...nazwiska].slice(0, 20),
+    titles,
+    // [a-złśżźćąęóń]* zamiast \w* — \w w JS nie łapie polskich znaków diakrytycznych,
+    // a odmiana bywa dowolna: obsługa/obsługę/obsługi, prawna/prawną/prawnej.
+    corporateClients: /obsług[a-złśżźćąęóń]*\s+(prawn[a-złśżźćąęóń]*\s+)?(firm|przedsiębiorc|spółek|podmiot|biznes)|dla\s+(firm|przedsiębiorc|biznesu)|klient[a-złśżźćąęóń]*\s+(biznesow|instytucjonaln|korporacyjn)/i.test(md),
+    locationCount: kody.size,
+    locations: [...kody].slice(0, 5),
+  };
+}
+
+const MIESIACE = ['stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
+                  'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'];
+
+/** Aktualności — data ostatniego wpisu (wymiar D + świeżość treści z Kroku 0). */
+function extractNews(md) {
+  const daty = [];
+  let m;
+
+  const iso = /\b(20\d{2})-(\d{2})-(\d{2})\b/g;
+  while ((m = iso.exec(md)) !== null) daty.push(`${m[1]}-${m[2]}-${m[3]}`);
+
+  const kropki = /\b(\d{1,2})\.(\d{1,2})\.(20\d{2})\b/g;
+  while ((m = kropki.exec(md)) !== null) {
+    daty.push(`${m[3]}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`);
+  }
+
+  const slowne = new RegExp('\\b(\\d{1,2})\\s+(' + MIESIACE.join('|') + ')\\s+(20\\d{2})\\b', 'gi');
+  while ((m = slowne.exec(md)) !== null) {
+    const mies = MIESIACE.indexOf(m[2].toLowerCase()) + 1;
+    daty.push(`${m[3]}-${String(mies).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`);
+  }
+
+  // Odsiej daty z przyszłości (numery ustaw, literówki) — nie mogą być datą wpisu.
+  const dzis = new Date().toISOString().slice(0, 10);
+  const realne = daty.filter(d => d <= dzis).sort();
+
+  const lastPostDate = realne.length ? realne[realne.length - 1] : null;
+  const lataOdWpisu = lastPostDate
+    ? Math.floor((Date.now() - new Date(lastPostDate).getTime()) / (365.25 * 24 * 3600 * 1000))
+    : null;
+
+  return { lastPostDate, lataOdWpisu, dateCount: new Set(realne).size };
+}
+
+const PODSTRONY = {
+  services: { nav: SERVICES_NAV, slug: SERVICES_SLUG, extract: extractServices, opis: 'usług' },
+  team:     { nav: TEAM_NAV,     slug: TEAM_SLUG,     extract: extractTeam,     opis: 'zespołu' },
+  news:     { nav: NEWS_NAV,     slug: NEWS_SLUG,     extract: extractNews,     opis: 'aktualności' },
+};
+
+/**
+ * Dociąga jedną podstronę wybranego typu i wyciąga z niej fakty.
+ * `cache` — współdzielony między typami wynik mapUrl (jedno wywołanie API na kancelarię).
+ * `zajete` — URL-e wzięte już przez inny typ, żeby ta sama strona nie trafiła w dwa pola.
+ */
+async function fetchSubpage(app, homeMd, baseUrl, typ, cache, zajete) {
+  const spec = PODSTRONY[typ];
+  let url = findSubpageUrl(homeMd, baseUrl, spec.nav, zajete);
   let via = 'link';
-  if (!url) { url = await findServicesUrlViaMap(app, baseUrl); via = 'map'; }
+  if (!url) { url = await findSubpageUrlViaMap(app, baseUrl, spec.slug, cache, zajete); via = 'map'; }
   if (!url) return { found: false };
+  if (zajete) zajete.add(url);
+
   const res = await app.scrapeUrl(url, { formats: ['markdown'] });
   const md = res.markdown || '';
   const headings = extractHeadings(md);
-  const practiceAreas = detectPracticeAreas(md);
   return {
     found: true,
     url,
@@ -218,13 +356,12 @@ async function fetchServicesPage(app, homeMd, baseUrl) {
     wordCount: md.split(/\s+/).filter(Boolean).length,
     headingCounts: { h1: headings.h1.length, h2: headings.h2.length, h3: headings.h3.length },
     headings,
-    practiceAreas,
-    practiceAreaCount: practiceAreas.length,
+    ...spec.extract(md),
   };
 }
 
 // ── Firecrawl: treść + struktura ────────────────────────────────────
-async function scrapeContent(targetUrl, { withServices = false } = {}) {
+async function scrapeContent(targetUrl, { withSubpages = false } = {}) {
   const Firecrawl = require('firecrawl').default;
   const app = new Firecrawl({ apiKey: process.env.FIRECRAWL_API_KEY });
 
@@ -308,13 +445,20 @@ async function scrapeContent(targetUrl, { withServices = false } = {}) {
     wordCount: md.split(/\s+/).length,
   };
 
-  // Dociągnij podstronę „Zakres usług" (tylko dla audytowanej strony, nie konkurenta) —
-  // bez tego specjalizacja oceniana jest po samym hero, co zaniża wymiar 1.
-  if (withServices) {
-    try {
-      content.servicesPage = await fetchServicesPage(app, md, targetUrl);
-    } catch (e) {
-      content.servicesPage = { found: false, error: e.message };
+  // Dociągnij podstrony (tylko dla audytowanej strony, nie konkurenta):
+  //   servicesPage — bez niej specjalizacja oceniana jest po samym hero, co zaniża wymiar 1
+  //   teamPage     — wymiar B oceny leada (ilu prawników, tytuły, obsługa firm, lokalizacje)
+  //   newsPage     — wymiar D oceny leada + świeżość treści (data ostatniego wpisu)
+  // Kolejność ma znaczenie: `zajete` pilnuje, by ta sama strona nie trafiła w dwa pola.
+  if (withSubpages) {
+    const cache = {};          // wynik mapUrl — jedno wywołanie API na kancelarię
+    const zajete = new Set();
+    for (const [typ, pole] of [['services', 'servicesPage'], ['team', 'teamPage'], ['news', 'newsPage']]) {
+      try {
+        content[pole] = await fetchSubpage(app, md, targetUrl, typ, cache, zajete);
+      } catch (e) {
+        content[pole] = { found: false, error: e.message };
+      }
     }
   }
 
@@ -419,8 +563,8 @@ async function auditOne(targetUrl, { competitorUrl } = {}) {
   const outDir = outDirFor(targetUrl);
 
   // Treść (Firecrawl) — gdy zawiedzie, rzucamy dalej (batch zaznaczy błąd, single zakończy).
-  // withServices: dociąga podstronę „Zakres usług", by specjalizacja była z treści, nie z hero.
-  const content = await scrapeContent(targetUrl, { withServices: true });
+  // withSubpages: dociąga „Zakres usług" (specjalizacja z treści, nie z hero), „Zespół" i „Aktualności".
+  const content = await scrapeContent(targetUrl, { withSubpages: true });
   fs.writeFileSync(path.join(outDir, 'content.json'), JSON.stringify(content, null, 2));
 
   // Wydajność + screenshoty (Playwright/Lighthouse) — błąd tu nie przekreśla audytu treści.
@@ -602,6 +746,18 @@ async function runPeekBatch(csvPath) {
       console.log(`    ✓ podstrona usług: ${content.servicesPage.practiceAreaCount} dziedzin (${content.servicesPage.url})`);
     } else {
       console.log(`    ⚠ nie znaleziono podstrony „Zakres usług" — specjalizację oceń z hero strony głównej`);
+    }
+    if (content.teamPage?.found) {
+      const t = content.teamPage;
+      console.log(`    ✓ podstrona zespołu: ${t.lawyerCount} prawników, obsługa firm: ${t.corporateClients}, lokalizacji: ${t.locationCount} (${t.url})`);
+    } else {
+      console.log(`    ⚠ nie znaleziono podstrony „Zespół" — wymiar B (potencjał) oceń ostrożnie, nie zgaduj`);
+    }
+    if (content.newsPage?.found) {
+      const n = content.newsPage;
+      console.log(`    ✓ podstrona aktualności: ostatni wpis ${n.lastPostDate || 'brak daty'}${n.lataOdWpisu != null ? ` (${n.lataOdWpisu} lat temu)` : ''} (${n.url})`);
+    } else {
+      console.log(`    ⚠ nie znaleziono podstrony „Aktualności" — brak danych do wymiaru D`);
     }
     if (vitals) console.log(`    ✓ performance: ${vitals.performanceScore ?? 'n/d'}, mobile: ${vitals.mobileFriendly}, schema: ${vitals.hasStructuredData}`);
     console.log(`\nGotowe → output/${domain}/`);

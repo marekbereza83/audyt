@@ -142,9 +142,31 @@ Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie — i **nic poz
 
 `mail-fragment.txt` to jedyny touchpoint audytu w cold mailu — nie gotowy mail i nie brief techniczny na całą sekwencję. Finalną treść maila 1 oraz całą sekwencję follow-upów (bez odwołań do audytu od maila 2) pisze skill `cold-email` z oficjalnego repo marketingskills (`.agents/skills/cold-email`), zgodnie z zasadami w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
 
+### Krok 6 — Ocena leada (kwalifikacja pod kątem sprzedaży)
+
+Osobno od score konwersji: czy **ta konkretna** kancelaria to szansa sprzedaży nowej strony za
+~4 500–6 500 zł? Przejdź przez 4 wymiary A/B/C/D z `reference/kryteria-audytu.md` → „Ocena leada"
+(źródła: `priorytet_wizualny` + `ageSignals` dla A, `teamPage` dla B, różnica A↔B dla C,
+`newsPage`/konkretny błąd dla D). Zapisz rozbicie punktacji jak w formacie z kryteriów.
+
+**Ta ocena nigdy nie trafia do `mail-fragment.txt` ani do maila** — to wewnętrzna kwalifikacja.
+
+Werdykt decyduje, co dalej:
+
+| Suma | Co robić |
+|---|---|
+| **7–8, `PISAĆ`** | zbierz dane w formacie kolumn `Claude_import` (patrz `sheets/README.md`) i wyślij: `node scripts/push-import.js <leady.json>`. Skrypt sam odrzuci duplikaty względem „Tracker" i „Claude_import" — nie zapisuj nic w arkuszu ręcznie |
+| 5–6 | **nie zapisuj do arkusza.** Zaloguj lokalnie, żeby nie audytować drugi raz: `node scripts/log-odrzucone.js <domena> <scoring_0_8> "<powod>"` |
+| 0–4, `ODPUŚCIĆ` | to samo, `log-odrzucone.js` |
+| brak danych / strona niedostępna | nie oceniaj — oznacz `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie zapisuj nigdzie |
+
+Przy audycie wsadowym rób to po Kroku 5 dla każdej kancelarii z listy, potem podaj podsumowanie
+paczki (sprawdzone / odrzucone / duplikaty / 5–6 niezapisane / nowe rodzynki 7–8/8 / strony
+niesprawdzone) — format z `reference/kryteria-audytu.md` → „Ocena leada".
+
 ## Wyjście
 
-Po zakończeniu pokaż użytkownikowi: ścieżkę do `audyt.md`, score ogólny, 3 najważniejsze rzeczy do poprawy i zapytaj do czego audyt jest potrzebny (cold mail / blog / wiedza) — to zmienia finalne sformułowanie (publiczny = anonimizuj nazwę kancelarii).
+Po zakończeniu pokaż użytkownikowi: ścieżkę do `audyt.md`, score ogólny, 3 najważniejsze rzeczy do poprawy, wynik oceny leada (Krok 6) i zapytaj do czego audyt jest potrzebny (cold mail / blog / wiedza) — to zmienia finalne sformułowanie (publiczny = anonimizuj nazwę kancelarii).
 
 ## Tryb wsadowy (batch)
 
@@ -168,6 +190,9 @@ Gdy trzeba zaudytować całą listę kancelarii naraz (np. z trackera), zamiast 
 - `reference/szablon-raportu.md` — format raportu po polsku
 - `scripts/scrape.js` — Firecrawl + Playwright + Lighthouse (tryb pojedynczy i `--batch`)
 - `scripts/batch-report.js` — zbiera wyniki batcha do `output/batch-fragments.csv`
+- `scripts/push-import.js` — wysyła rodzynki 7–8/8 do zakładki „Claude_import" arkusza (dedup po stronie arkusza)
+- `scripts/log-odrzucone.js` — loguje lokalnie leady 5–6/8 do `output/odrzucone.csv`, żeby nie audytować drugi raz
+- `sheets/Code.gs` + `sheets/README.md` — webhook Apps Script obsługujący zapis i dedup w arkuszu (wdrożenie jednorazowe)
 - `scripts/package.json` — zależności
 
 ## Setup (jednorazowo)

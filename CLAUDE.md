@@ -35,26 +35,31 @@ Klucz Firecrawl wczytywany z `scripts/.env` (plik gitignorowany). Jeden scrape t
 
 Na żądanie „zaudytuj https://..." wykonaj pełny workflow (`SKILL.md`) i zwróć:
 - `output/<domena>/audyt.md` — raport po polsku w tonie merytorycznym
-- `output/<domena>/audyt-dane.json` — dane strukturalne (8 wymiarów + score)
-- `output/<domena>/mail-fragment.txt` — 2–4 zdania gotowe do cold maila (≤400 znaków, zawsze generowane)
+- `output/<domena>/audyt-dane.json` — dane strukturalne (8 wymiarów + score + kwalifikacja leada)
+- `output/<domena>/mail-observation.txt` — **tylko gdy kwalifikacja da `PISAĆ` (7–8/8) bez blokady kontaktu** — krótki fakt + jedno pytanie otwarte, ≤400 znaków. Nie temat, nie treść maila (patrz „Podział pracy" wyżej).
 - screenshoty desktop i mobile
 
-Po audycie zapytaj do czego jest potrzebny (cold mail / blog / wiedza) — to zmienia finalne sformułowanie (publiczny = anonimizuj nazwę kancelarii).
+Po audycie zapytaj do czego jest potrzebny (cold mail / blog / wiedza) — to zmienia tylko anonimizację (publiczny = anonimizuj nazwę kancelarii); Claude nie pisze ani nie wysyła maila w żadnym z tych przypadków.
 
 Opcjonalnie z konkurentem: `node scrape.js https://kancelaria.pl https://konkurent.pl` → tworzy też `competitor.json` i sekcję „Co robi konkurencja" w raporcie.
 
 ---
 
-## Pisanie cold maila do kancelarii (po audycie)
+## Podział pracy: Claude kwalifikuje, ChatGPT pisze i wysyła maila
 
-1. Uruchom audyt: `audyt-kancelarii-skill/scripts/scrape.js <url>` → `audyt.md` + `mail-fragment.txt`.
-2. Użyj `mail-fragment.txt` jako „research signal" (punkt 5 z listy pytań w skillu `cold-email`, sekcja „Before Writing").
-3. Uruchom skill `cold-email` (`.agents/skills/cold-email`, z repo `coreyhaines31/marketingskills`) — frameworks, subject-lines, personalization, follow-up-sequences, benchmarks. Skill sam czyta `.agents/product-marketing.md` dla kontekstu FORMA, jeśli plik istnieje.
-4. `mail-fragment.txt` to surowy research signal (fakt + pain point), nie gotowy mail — `cold-email` nadaje mu strukturę, temat, i pilnuje zasad anty-szablonowych.
+**Claude (to repo) robi wyłącznie prospecting i kwalifikację leada — nigdy nie pisze ani nie wysyła cold maila.** Pipeline:
 
-**Ważne — audyt daje jedną obserwację, nie brief techniczny na całą sekwencję.** FORMA sprzedaje nową stronę/wizerunek, nie audyt SEO/wydajności. Cała async sekwencja (mail 1 → follow-upy) ma być wolna od żargonu technicznego (LCP, cache, SSL, JSON-LD, benchmark, „score") — te wchodzą dopiero do rozmowy po odpowiedzi odbiorcy. Pełne zasady i przykład w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
+`Apify/prospecting → Claude (scrape + audyt + kwalifikacja A/B/C/D) → Claude_import (status_importu: NOWY) → ChatGPT (weryfikacja, treść maila M1, szkic Gmail, aktualizacja Trackera) → człowiek (przegląd i ręczna wysyłka)`
 
-Do budowania listy kancelarii do zaudytowania (upstream, przed powyższym workflow) dostępny jest też skill `prospecting` (ten sam repo) — nie pokrywa się z `audyt-kancelarii`: `prospecting` szuka i kwalifikuje firmy, `audyt-kancelarii` audytuje jedną konkretną stronę.
+1. Uruchom audyt: `audyt-kancelarii-skill/scripts/scrape.js <url>` → `audyt.md` + `audyt-dane.json`.
+2. Zakwalifikuj leada (`kryteria-audytu.md` → „Ocena leada", `SKILL.md` → Krok 5). Tylko dla `PISAĆ` (7–8/8) bez blokady kontaktu: zapisz `mail-observation.txt` — krótki, faktograficzny hak (fakt + jedno pytanie otwarte), **nie temat i nie treść maila** (SKILL.md → Krok 6).
+3. Wyślij do arkusza: `node audyt-kancelarii-skill/scripts/push-import.js <leady.json>` → zakładka `Claude_import`, `status_importu: NOWY`.
+4. Stąd dalej pracuje ChatGPT (poza tym repo): ponownie weryfikuje 7–8/8, sprawdza duplikaty w całym Trackerze i historii Gmaila, pisze temat i treść M1, tworzy **wyłącznie szkic** Gmail, zapisuje `SZKIC_GMAIL` w Trackerze. Po przejęciu rekordu zmienia `status_importu` z `NOWY` na `PRZEJĘTY`.
+5. Człowiek sprawdza szkic i wysyła ręcznie. **Żaden proces nie wysyła cold maila automatycznie.**
+
+**Ważne — audyt daje jedną obserwację, nie brief techniczny na całą sekwencję.** FORMA sprzedaje nową stronę/wizerunek, nie audyt SEO/wydajności. `obserwacja_do_maila` (i cała dalsza korespondencja, którą pisze już ChatGPT) ma być wolna od żargonu technicznego (LCP, cache, SSL, JSON-LD, benchmark, „score") — te wchodzą dopiero do rozmowy po odpowiedzi odbiorcy. Pełne zasady i przykład w `.agents/product-marketing.md` → „Co sprzedaje FORMA" (kontekst produktowy dla drugiej automatyzacji, nie do wykonania przez Claude w tym repo).
+
+Do budowania listy kancelarii do zaudytowania (upstream, przed powyższym workflow) dostępny jest też skill `prospecting` (ten sam repo `coreyhaines31/marketingskills`) — nie pokrywa się z `audyt-kancelarii`: `prospecting` szuka i wstępnie kwalifikuje firmy, `audyt-kancelarii` audytuje i ocenia jedną konkretną stronę. Skill `cold-email` (tamże) nie jest już częścią tego pipeline'u — pisanie maila przejęła druga automatyzacja (ChatGPT) na etapie po `Claude_import`.
 
 ---
 
@@ -64,13 +69,17 @@ Do budowania listy kancelarii do zaudytowania (upstream, przed powyższym workfl
 # 1. Pobierz dane dla wszystkich (max 3 równolegle, ~60–90 s/firma)
 node scrape.js --batch lista.csv
 
-# 2. Wygeneruj audyty per kancelaria (Kroki 2–5 z SKILL.md) dla każdego output/<domena>/
+# 2. Wygeneruj audyty per kancelaria (Kroki 2–6 z SKILL.md) dla każdego output/<domena>/
+#    — mail-observation.txt tylko dla PISAĆ. Po każdej: node validate-lead.js <domena>
 
-# 3. Zbiorczy CSV do trackera (BOM UTF-8, gotowy do Excela)
-node batch-report.js lista.csv   # → output/batch-fragments.csv
+# 3. Zbiorczy CSV lokalnie (BOM UTF-8, gotowy do Excela)
+node batch-report.js lista.csv   # → output/batch-leady.csv (główny raport)
+
+# 4. Rodzynki 7–8/8 (PISAĆ) do arkusza — status_importu: NOWY, dalej pracuje ChatGPT
+node push-import.js leady.json
 ```
 
-`lista.csv` format: `nazwa,url` (ostatni przecinek = separator; nazwy mogą zawierać przecinki).
+`lista.csv` format: legacy `nazwa,url` (ostatni przecinek = separator; nazwy mogą zawierać przecinki) albo rozszerzony (`lead_id,nazwa,miasto,url,telefon,email,...` — patrz `audyt-kancelarii-skill/scripts/csv-utils.js`).
 
 ---
 
@@ -92,3 +101,4 @@ node batch-report.js lista.csv   # → output/batch-fragments.csv
    - Screenshot ma pierwszeństwo nad surowym licznikiem scrapera: `ctaCount=0` nie oznacza „brak CTA", jeśli na screenshocie widać przycisk.
 3. **Audyt publiczny = anonimizuj** nazwę kancelarii.
 4. **Nie zmieniaj `benchmark-pl-law.json` ręcznie.**
+5. **Claude nigdy nie pisze tematu ani treści maila (M1/FU1/FU2), nie tworzy szkicu Gmail, nie wysyła i nie aktualizuje statusów w Trackerze.** Kończy na kwalifikacji + `mail-observation.txt` (Krok 5–6 w `SKILL.md`); resztę robi ChatGPT po przejęciu rekordu z `Claude_import` — patrz „Podział pracy" wyżej.

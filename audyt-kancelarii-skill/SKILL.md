@@ -84,11 +84,40 @@ Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8
 
 — żeby dało się je użyć w cold mailu, zestawieniu i kolumnie `priorytet_wizualny` trackera.
 
-### Krok 5 — Fragment do maila
+### Krok 5 — Ocena leada (kwalifikacja pod kątem sprzedaży)
 
-Zapisz `output/<domena>/mail-fragment.txt` — **zawsze, dla każdej zaudytowanej strony**.
+Osobno od score konwersji: czy **ta konkretna** kancelaria to szansa sprzedaży nowej strony za
+~4 500–6 500 zł? Przejdź przez 4 wymiary A/B/C/D z `reference/kryteria-audytu.md` → „Ocena leada"
+(źródła: `priorytet_wizualny` + `ageSignals` dla A, `teamPage` dla B, różnica A↔B dla C,
+`newsPage`/konkretny błąd dla D). Zapisz rozbicie punktacji jak w formacie z kryteriów, do
+`audyt-dane.json` → `kwalifikacja_leada`.
 
-**To pole zasila WYŁĄCZNIE otwarcie maila 1.** Fakty techniczne z audytu (LCP, HTTPS, JSON-LD, benchmark, score) zostają w `audyt.md` do użytku wewnętrznego FORMA i **nie trafiają do dalszej korespondencji** — ani do tego pliku, ani do maili 2–5 generowanych później przez skill `cold-email`.
+**Ta ocena nigdy nie trafia do obserwacji ani do maila** — to wewnętrzna kwalifikacja, odbiorca nie ma wiedzieć, że go punktujemy.
+
+Werdykt:
+
+| Suma | `decyzja` | Co dalej |
+|---|---|---|
+| **7–8** | `PISAĆ` | przejdź do Kroku 6 — zapisz obserwację i przekaż do `Claude_import` |
+| 5–6 | `ODPUŚCIĆ` (rozróżnienie od 0–4 widać po `scoring_0_8`) | **nie zapisuj do arkusza, nie pisz obserwacji.** Zaloguj lokalnie: `node scripts/log-odrzucone.js <domena> <scoring_0_8> "<powod>"` |
+| 0–4 | `ODPUŚCIĆ` | to samo, `log-odrzucone.js` |
+| brak danych / strona niedostępna | `null` (`pewnosc_oceny` ≠ `pelna`) | nie oceniaj — oznacz `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie zapisuj nigdzie |
+
+**`PISAĆ` nie może opierać się wyłącznie na wieku strony, kosmetyce albo błędzie widocznym tylko w narzędziu** (np. TLS/502 z Lighthouse, którego nie widać na zrzucie) — potrzeba ≥1 mocnej przesłanki, którą zauważyłby realny odwiedzający. `node scripts/validate-lead.js <domena>` odrzuci taką kwalifikację.
+
+Przy audycie wsadowym rób to po Kroku 4 dla każdej kancelarii z listy.
+
+### Krok 6 — Obserwacja do maila i przekazanie do `Claude_import` (tylko dla `PISAĆ`)
+
+**Ten krok dotyczy wyłącznie leadów z Kroku 5 = `PISAĆ` bez blokady kontaktu.** Dla `ODPUŚCIĆ`, oceny wstępnej i leadów zablokowanych (`lead-info.json` → `mail_zablokowany`) pomiń go całkowicie — bez obserwacji, bez pliku, bez przekazania.
+
+**Claude na tym etapie kończy pracę.** Nie pisz tematu ani treści maila (M1, FU1, FU2), nie twórz szkicu Gmail, nie wysyłaj niczego i nie zmieniaj statusu operacyjnego w Trackerze — to robi druga automatyzacja (ChatGPT) po przejęciu rekordu z zakładki `Claude_import`:
+
+`Apify → Claude (audyt + kwalifikacja) → Claude_import (status_importu: NOWY) → ChatGPT (weryfikacja, treść M1, szkic Gmail, aktualizacja Trackera) → człowiek (przegląd i ręczna wysyłka)`
+
+Zapisz `output/<domena>/mail-observation.txt` (nazwa kanoniczna — `mail-fragment.txt` jest legacy aliasem ze starszych audytów, `batch-report.js` czyta oba).
+
+**To pole jest materiałem wejściowym dla ChatGPT, nie gotowym mailem.** Fakty techniczne z audytu (LCP, HTTPS, JSON-LD, benchmark, score) zostają w `audyt.md` do użytku wewnętrznego FORMA i **nie trafiają do dalszej korespondencji** — ani do tego pliku, ani do maila M1/follow-upów, które pisze później ChatGPT.
 
 Format: **jedna konkretna, możliwa do zweryfikowania obserwacja wynikająca z audytu + jedno pytanie otwarte.** Nie sama miękka opinia — obserwacja musi nazywać coś, co odbiorca może sam sprawdzić na własnej stronie (np. dosłowny cytat nagłówka, konkretny element, który tam jest albo którego tam nie ma). **Test przed zapisaniem: czy to zdanie dałoby się wysłać do dowolnej innej kancelarii bez zmian i wciąż brzmiałoby prawdziwie?** Jeśli tak — obserwacja jest za ogólna, wróć do audytu i weź coś bardziej charakterystycznego dla tej konkretnej strony.
 
@@ -140,56 +169,43 @@ Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie — i **nic poz
 2. Czy odbiorca uwierzy, że naprawdę obejrzałem jego stronę? Jeśli NIE — od nowa.
 3. Czy brzmi jak wiadomość od konkretnego człowieka, a nie z kampanii? Jeśli NIE — od nowa.
 
-`mail-fragment.txt` to jedyny touchpoint audytu w cold mailu — nie gotowy mail i nie brief techniczny na całą sekwencję. Finalną treść maila 1 oraz całą sekwencję follow-upów (bez odwołań do audytu od maila 2) pisze skill `cold-email` z oficjalnego repo marketingskills (`.agents/skills/cold-email`), zgodnie z zasadami w `.agents/product-marketing.md` → „Co sprzedaje FORMA".
+`mail-observation.txt` to jedyny touchpoint audytu w cold mailu — nie gotowy mail i nie brief techniczny na całą sekwencję. Finalną treść maila M1 oraz follow-upy pisze ChatGPT po przejęciu rekordu z `Claude_import` — poza tym repo i poza tym skillem.
 
-### Krok 6 — Ocena leada (kwalifikacja pod kątem sprzedaży)
+Po zapisaniu obserwacji: zbierz dane w formacie kolumn `Claude_import` (patrz `sheets/README.md`) i wyślij: `node scripts/push-import.js <leady.json>`. Webhook sam odrzuci duplikaty względem „Tracker" i „Claude_import" oraz zapisze `status_importu: NOWY` — nie zapisuj nic w arkuszu ręcznie i nie ustawiaj `PRZEJĘTY` (to robi ChatGPT po przejęciu rekordu).
 
-Osobno od score konwersji: czy **ta konkretna** kancelaria to szansa sprzedaży nowej strony za
-~4 500–6 500 zł? Przejdź przez 4 wymiary A/B/C/D z `reference/kryteria-audytu.md` → „Ocena leada"
-(źródła: `priorytet_wizualny` + `ageSignals` dla A, `teamPage` dla B, różnica A↔B dla C,
-`newsPage`/konkretny błąd dla D). Zapisz rozbicie punktacji jak w formacie z kryteriów.
-
-**Ta ocena nigdy nie trafia do `mail-fragment.txt` ani do maila** — to wewnętrzna kwalifikacja.
-
-Werdykt decyduje, co dalej:
-
-| Suma | Co robić |
-|---|---|
-| **7–8, `PISAĆ`** | zbierz dane w formacie kolumn `Claude_import` (patrz `sheets/README.md`) i wyślij: `node scripts/push-import.js <leady.json>`. Skrypt sam odrzuci duplikaty względem „Tracker" i „Claude_import" — nie zapisuj nic w arkuszu ręcznie |
-| 5–6 | **nie zapisuj do arkusza.** Zaloguj lokalnie, żeby nie audytować drugi raz: `node scripts/log-odrzucone.js <domena> <scoring_0_8> "<powod>"` |
-| 0–4, `ODPUŚCIĆ` | to samo, `log-odrzucone.js` |
-| brak danych / strona niedostępna | nie oceniaj — oznacz `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie zapisuj nigdzie |
-
-Przy audycie wsadowym rób to po Kroku 5 dla każdej kancelarii z listy, potem podaj podsumowanie
-paczki (sprawdzone / odrzucone / duplikaty / 5–6 niezapisane / nowe rodzynki 7–8/8 / strony
-niesprawdzone) — format z `reference/kryteria-audytu.md` → „Ocena leada".
+Przy audycie wsadowym: po przejściu Kroków 5–6 dla każdej kancelarii z listy podaj podsumowanie paczki (sprawdzone / odrzucone / duplikaty / 5–6 niezapisane / nowe rodzynki 7–8/8 wysłane do importu / strony niesprawdzone) — format z `reference/kryteria-audytu.md` → „Ocena leada".
 
 ## Wyjście
 
-Po zakończeniu pokaż użytkownikowi: ścieżkę do `audyt.md`, score ogólny, 3 najważniejsze rzeczy do poprawy, wynik oceny leada (Krok 6) i zapytaj do czego audyt jest potrzebny (cold mail / blog / wiedza) — to zmienia finalne sformułowanie (publiczny = anonimizuj nazwę kancelarii).
+Po zakończeniu pokaż użytkownikowi: ścieżkę do `audyt.md`, score ogólny, 3 najważniejsze rzeczy do poprawy, wynik oceny leada (Krok 5) i — jeśli `PISAĆ` — potwierdzenie przekazania do `Claude_import` (Krok 6). Zapytaj do czego audyt jest potrzebny (cold mail / blog / wiedza) — to zmienia tylko anonimizację (publiczny = anonimizuj nazwę kancelarii); Claude nie pisze ani nie wysyła maila w żadnym z tych przypadków.
 
 ## Tryb wsadowy (batch)
 
-Gdy trzeba zaudytować całą listę kancelarii naraz (np. z trackera), zamiast jednej po drugiej:
+Gdy trzeba zaudytować całą listę kancelarii naraz (np. świeży dataset Apify albo eksport z trackera), zamiast jednej po drugiej. **W tym trybie Claude jest wyłącznie prospectingiem i kwalifikacją** — patrz podział odpowiedzialności w Kroku 6.
 
-1. **Wejście** — CSV z kolumnami `nazwa,url` (eksport z trackera — patrz `README.md`).
-2. **Scrape wszystkich** — `node scripts/scrape.js --batch lista.csv`. Iteruje po liście, **max 3 strony równolegle**, loguje postęp `[i/total] Audytuję ...`. Dla każdej zapisuje `output/<domena>/` jak w trybie pojedynczym. Błąd jednej strony (nie istnieje, timeout) **nie przerywa** reszty — zapisuje `scrape-error.txt` i leci dalej.
-3. **Audyty per kancelaria** — przejdź po kolei przez katalogi `output/<domena>/` i dla każdej wykonaj Kroki 2–5 (ocena → `audyt.md` + `audyt-dane.json` + `mail-fragment.txt`). To krok Claude, nie skryptu — `scrape.js` zbiera tylko dane.
-4. **Zbiorczy raport** — `node scripts/batch-report.js lista.csv`. Zbiera dane do dwóch plików:
-   - `output/batch-fragments.csv` — udane audyty (kolumny: `nazwa,url,score,priorytet_glowny,fragment_do_maila`), posortowane po score rosnąco (najniższy score = największa luka = na górze).
-   - `output/batch-nieudane.csv` — strony, których nie udało się pobrać (`nazwa,url,powod_bledu,data_proby`). Do ręcznej weryfikacji. Batch **nie ponawia** nieudanych automatycznie.
+1. **Wejście** — CSV: format legacy `nazwa,url` albo rozszerzony (`lead_id,nazwa,miasto,url,telefon,email,imie_kontaktowe,status,do_not_contact,notatki,data_M1,gmail_thread_id,totalScore,reviewsCount,imagesCount,categories,placeId,permanentlyClosed` — kolejność kolumn dowolna, rozpoznawane po nagłówku, parser: `scripts/csv-utils.js`).
+2. **Scrape wszystkich** — `node scripts/scrape.js --batch lista.csv`. Filtruje najpierw firmy zamknięte (`permanentlyClosed`), duplikaty (domena/telefon/placeId) i rekordy bez poprawnego URL, potem iteruje **max 3 strony równolegle**, loguje postęp `[i/total] Audytuję ...`. Dla każdej zapisuje `output/<domena>/` jak w trybie pojedynczym + `lead-info.json` (identyfikacja, status operacyjny, kontekst Google Maps, blokada kontaktu). Błąd jednej strony (nie istnieje, timeout) **nie przerywa** reszty — zapisuje `scrape-error.txt` i leci dalej.
+3. **Audyty per kancelaria** — przejdź po kolei przez katalogi `output/<domena>/` i dla każdej wykonaj Kroki 2–6 (ocena → `audyt.md` + `audyt-dane.json`, dla `PISAĆ` dodatkowo `mail-observation.txt`). To krok Claude, nie skryptu — `scrape.js` zbiera tylko dane. Po każdej kancelarii: `node scripts/validate-lead.js <domena>`.
+4. **Zbiorczy raport** — `node scripts/batch-report.js lista.csv`. Zbiera dane do:
+   - `output/batch-leady.csv` — **GŁÓWNY raport** (sortowanie: `PISAĆ` → `ODPUŚCIĆ` → wstępne/do ponownego audytu; w ramach decyzji scoring malejąco).
+   - `output/batch-pominiete.csv` — wykluczone: blokada kontaktu, firmy zamknięte, duplikaty, zły URL.
+   - `output/batch-nieudane.csv` — strony, których nie udało się pobrać. Do ręcznej weryfikacji, batch **nie ponawia** automatycznie.
+5. **Przekazanie rodzynków** — zbierz leady `PISAĆ` (7–8/8) w formacie kolumn `Claude_import` i wyślij: `node scripts/push-import.js <leady.json>` (patrz Krok 6).
 
-**Warunek wstępny:** batch na **prawdziwych** kancelariach z trackera dopiero po przejściu kalibracji na stronie testowej (`zla-strona-testowa-spec.md`). Jeśli kalibracja nie przeszła — zatrzymaj się i o tym przypomnij.
+**Warunek wstępny:** batch na **prawdziwych** kancelariach dopiero po przejściu kalibracji na stronie testowej (`zla-strona-testowa-spec.md`). Jeśli kalibracja nie przeszła — zatrzymaj się i o tym przypomnij.
 
 **Limit równoległości (max 3)** — nie przeciążaj Firecrawl/Playwright ani nie wypal darmowego limitu (~500 stron/mies) w jeden dzień.
 
 ## Pliki pomocnicze
 
-- `reference/kryteria-audytu.md` — 8 wymiarów oceny + jak punktować (system FORMA) + mapa wysiłek/efekt
+- `reference/kryteria-audytu.md` — 8 wymiarów oceny + jak punktować (system FORMA) + mapa wysiłek/efekt + „Ocena leada"
 - `reference/benchmark-pl-law.json` — agregaty z 21 polskich kancelarii
 - `reference/szablon-raportu.md` — format raportu po polsku
-- `scripts/scrape.js` — Firecrawl + Playwright + Lighthouse (tryb pojedynczy i `--batch`)
-- `scripts/batch-report.js` — zbiera wyniki batcha do `output/batch-fragments.csv`
+- `reference/schemat-audyt-dane.json` — kanoniczny szablon `audyt-dane.json` (kopiuj i wypełniaj)
+- `scripts/scrape.js` — Firecrawl + Playwright + Lighthouse (tryb pojedynczy, `--peek`, `--peek-batch`, `--batch`)
+- `scripts/csv-utils.js` — wspólny parser CSV (legacy/rozszerzony) + normalizacja/dedup dla `scrape.js` i `batch-report.js`
+- `scripts/batch-report.js` — zbiera wyniki batcha do `output/batch-leady.csv`
+- `scripts/validate-lead.js` — waliduje `audyt-dane.json` przed przekazaniem dalej (`node validate-lead.js <domena>|--all`)
 - `scripts/push-import.js` — wysyła rodzynki 7–8/8 do zakładki „Claude_import" arkusza (dedup po stronie arkusza)
 - `scripts/log-odrzucone.js` — loguje lokalnie leady 5–6/8 do `output/odrzucone.csv`, żeby nie audytować drugi raz
 - `sheets/Code.gs` + `sheets/README.md` — webhook Apps Script obsługujący zapis i dedup w arkuszu (wdrożenie jednorazowe)

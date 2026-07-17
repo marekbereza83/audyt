@@ -1,44 +1,58 @@
 #!/usr/bin/env node
 /**
- * scrape.js — pobiera stronę kancelarii do audytu.
+ * scrape.js — pobiera stronę kancelarii do audytu i kwalifikacji leada.
  * Użycie:
  *   node scrape.js <url> [<url-konkurenta>]    — pojedyncza strona (+ opcjonalny konkurent)
- *   node scrape.js --peek <url>                — Etap 0: tylko screenshot (bez Firecrawl), kwalifikacja wizualna
- *   node scrape.js --peek-batch <lista.csv>    — Etap 0 wsadowo (CSV: nazwa,url), max 8 równolegle (sam Playwright)
- *   node scrape.js --batch <lista.csv>         — tryb wsadowy (CSV: nazwa,url), max 3 równolegle
+ *   node scrape.js --peek <url>                — Etap 0: tylko screenshot (bez Firecrawl), ocena wstępna
+ *   node scrape.js --peek-batch <lista.csv>    — Etap 0 wsadowo, max 8 równolegle (sam Playwright)
+ *   node scrape.js --batch <lista.csv>         — tryb wsadowy (pełny scrape), max 3 równolegle
  * Wymaga: FIRECRAWL_API_KEY w .env lub w env, zainstalowany chromium (npx playwright install chromium)
+ *
+ * CSV wejściowy (oba tryby wsadowe) — dwa formaty, rozpoznawane po nagłówku (parser: csv-utils.js):
+ *   legacy:      nazwa,url
+ *   rozszerzony: lead_id,nazwa,miasto,url,telefon,email,imie_kontaktowe,status,do_not_contact,
+ *                notatki,data_M1,gmail_thread_id,totalScore,reviewsCount,imagesCount,categories,
+ *                placeId,permanentlyClosed
  *
  * Zwraca do output/<domena>/:
  *   content.json          — markdown, nagłówki, meta, CTA, formularze, dane kontaktowe
  *                           + servicesPage: dociągnięta podstrona „Zakres usług" (specjalizacja z treści, nie z hero)
  *                           + teamPage: dociągnięta podstrona „Zespół" (prawnicy, tytuły, obsługa firm, lokalizacje — wymiar B oceny leada)
  *                           + newsPage: dociągnięta podstrona „Aktualności" (data ostatniego wpisu — wymiar D oceny leada)
+ *                           + contactPage: dociągnięta podstrona „Kontakt" (email/telefony do trackera — email często jest tylko tam)
  *                           + ageSignals: ślady wieku/zaniedbania (copyright, generator, stary szablon) dla oceny leada
  *   vitals.json           — Core Web Vitals + performance score + https + mobile
  *   screenshot-desktop.png, screenshot-mobile.png
+ *   lead-info.json        — (tryb batch) dane wejściowe leada: identyfikacja, status operacyjny,
+ *                           kontekst Google Maps, blokada kontaktu (mail_zablokowany + powód)
  *   competitor.json       — (tylko gdy podano url-konkurenta) { url, content, vitals } konkurenta
  *   scrape-error.txt      — (tryb batch, gdy strona zawiedzie) powód błędu
  *
- * Tryb batch zbiera tylko dane. Audyty (audyt.md + mail-fragment.txt) generuje Claude per strona,
- * a zbiorczy raport: node batch-report.js <lista.csv> → output/batch-fragments.csv
+ * Tryb batch: pomija firmy permanentlyClosed, duplikaty (domena/telefon/placeId) i rekordy bez
+ * poprawnego URL. Leady z blokadą kontaktu (do_not_contact, status M1_WYSŁANY itd.) są scrapowane
+ * normalnie — audyt można zaktualizować — ale w lead-info.json dostają mail_zablokowany: true
+ * i dla nich NIE powstaje ani obserwacja_do_maila, ani przekazanie do Claude_import.
+ *
+ * Tryb batch zbiera tylko dane. Audyt i kwalifikację A/B/C/D (0–8) generuje Claude per strona
+ * (SKILL.md) — WYŁĄCZNIE prospecting i kwalifikacja, bez pisania treści maila (temat/treść M1
+ * powstają później, po stronie ChatGPT, z zakładki „Claude_import"). Zbiorczy raport:
+ * node batch-report.js <lista.csv> → output/batch-leady.csv, a rodzynki 7–8/8 (PISAĆ) idą do
+ * arkusza przez push-import.js (status_importu: NOWY).
  */
 
 require('dotenv').config({ override: true });
 const fs = require('fs');
 const path = require('path');
+const {
+  domainOf, normalizeDomain, normalizePhone, parseLeadsCsv, isContactBlocked,
+} = require('./csv-utils');
 
 const arg1 = process.argv[2];
 if (!arg1) {
-  console.error('Użycie:\n  node scrape.js <url> [<url-konkurenta>]\n  node scrape.js --batch <lista.csv>   (CSV z kolumnami: nazwa,url)');
+  console.error('Użycie:\n  node scrape.js <url> [<url-konkurenta>]\n  node scrape.js --batch <lista.csv>   (CSV: nazwa,url lub format rozszerzony)');
   process.exit(1);
 }
 
-// Domena → nazwa katalogu w output/ (ta sama logika co w batch-report.js)
-// Usuwa query string/fragment PRZED sanityzacją — Windows nie pozwala na ?/& w nazwach
-// folderów, a linki z Google Business Profile często mają doklejone ?utm_source=... itd.
-function domainOf(u) {
-  return u.replace(/^https?:\/\//, '').replace(/[?#].*$/, '').replace(/[\/:]/g, '_').replace(/_+$/, '');
-}
 function outDirFor(u) {
   const d = path.join(__dirname, '..', 'output', domainOf(u));
   fs.mkdirSync(d, { recursive: true });
@@ -114,6 +128,20 @@ const NEWS_SLUG = [
   /\/blog/i,
   /(news|nowosci)/i,
   /(publikacj|artykul|porady)/i,
+];
+
+// ── Podstrona „Kontakt" ──────────────────────────────────────────────
+// Email do trackera (kolumna Email w Claude_import) często jest TYLKO na podstronie kontaktu —
+// strona główna pokazuje go rzadziej niż telefon. Dodatkowo drugi telefon/adresy oddziałów.
+const CONTACT_NAV = [
+  /^\s*kontakt\s*$/i,
+  /kontakt/i,
+  /dane\s+kontaktowe/i,
+  /jak\s+.*(trafić|dojechać)|dojazd/i,
+];
+const CONTACT_SLUG = [
+  /(kontakt|contact)/i,
+  /(dojazd|lokalizacja)/i,
 ];
 
 // (1) Próba z linków strony głównej — działa na nowoczesnych stronach, bez dodatkowego wywołania API.
@@ -327,10 +355,22 @@ function extractNews(md) {
   return { lastPostDate, lataOdWpisu, dateCount: new Set(realne).size };
 }
 
+/** Kontakt — wszystkie emaile/telefony + kody pocztowe (adresy oddziałów). Do trackera, nie do oceny. */
+function extractContact(md) {
+  const emails = [...new Set(md.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [])]
+    // odfiltruj śmieci typu nazwa-pliku@2x.png z markdownu obrazków
+    .filter(e => !/\.(png|jpe?g|gif|svg|webp)$/i.test(e))
+    .slice(0, 5);
+  const phones = [...new Set(md.match(/(\+48[\s\-]?\d{3}[\s\-]?\d{3}[\s\-]?\d{3}|\b\d{3}[\s\-]\d{3}[\s\-]\d{3}\b)/g) || [])].slice(0, 5);
+  const postalCodes = [...new Set(md.match(/\b\d{2}-\d{3}\b/g) || [])].slice(0, 5);
+  return { emails, phones, postalCodes };
+}
+
 const PODSTRONY = {
   services: { nav: SERVICES_NAV, slug: SERVICES_SLUG, extract: extractServices, opis: 'usług' },
   team:     { nav: TEAM_NAV,     slug: TEAM_SLUG,     extract: extractTeam,     opis: 'zespołu' },
   news:     { nav: NEWS_NAV,     slug: NEWS_SLUG,     extract: extractNews,     opis: 'aktualności' },
+  contact:  { nav: CONTACT_NAV,  slug: CONTACT_SLUG,  extract: extractContact,  opis: 'kontaktu' },
 };
 
 /**
@@ -449,11 +489,14 @@ async function scrapeContent(targetUrl, { withSubpages = false } = {}) {
   //   servicesPage — bez niej specjalizacja oceniana jest po samym hero, co zaniża wymiar 1
   //   teamPage     — wymiar B oceny leada (ilu prawników, tytuły, obsługa firm, lokalizacje)
   //   newsPage     — wymiar D oceny leada + świeżość treści (data ostatniego wpisu)
+  //   contactPage  — email/telefony do trackera (email często jest tylko tam)
   // Kolejność ma znaczenie: `zajete` pilnuje, by ta sama strona nie trafiła w dwa pola.
+  // Koszt: do 4 dodatkowych wywołań Firecrawl na kancelarię (+1 mapUrl przy fallbacku) —
+  // przy limicie ~500 stron/mies to ~80–100 pełnych audytów miesięcznie.
   if (withSubpages) {
     const cache = {};          // wynik mapUrl — jedno wywołanie API na kancelarię
     const zajete = new Set();
-    for (const [typ, pole] of [['services', 'servicesPage'], ['team', 'teamPage'], ['news', 'newsPage']]) {
+    for (const [typ, pole] of [['services', 'servicesPage'], ['team', 'teamPage'], ['news', 'newsPage'], ['contact', 'contactPage']]) {
       try {
         content[pole] = await fetchSubpage(app, md, targetUrl, typ, cache, zajete);
       } catch (e) {
@@ -611,70 +654,137 @@ async function peekScreenshot(targetUrl) {
   return { outDir, shot };
 }
 
-// ── CSV (nazwa,url) — split na OSTATNIM przecinku, bo url nie zawiera przecinka,
-//    a nazwa kancelarii może (np. „RS Legal (Radzikowski, Szubielska...)"). ──
-function parseCsv(text) {
-  return text.split(/\r?\n/)
-    .map(l => l.trim())
-    .filter(l => l.length > 0)
-    .map(l => {
-      const i = l.lastIndexOf(',');
-      if (i < 0) return null;
-      const nazwa = l.slice(0, i).trim().replace(/^"|"$/g, '').replace(/""/g, '"');
-      const url = l.slice(i + 1).trim().replace(/^"|"$/g, '');
-      return { nazwa, url };
-    })
-    .filter(r => r && r.url && r.url.toLowerCase() !== 'url')          // pomija nagłówek nazwa,url
-    .map(r => ({ nazwa: r.nazwa, url: /^https?:\/\//i.test(r.url) ? r.url : 'https://' + r.url }));
+// ── Filtrowanie leadów przed scrape: zamknięte firmy, duplikaty, zły URL ──
+// Zwraca { toScrape, skipped } — skipped z powodem (batch-report.js odtwarza tę samą listę
+// do output/batch-pominiete.csv). Leady z blokadą kontaktu (do_not_contact / status) NIE są
+// tu pomijane — audyt wolno zaktualizować; blokada dotyczy wyłącznie maila i jest zapisywana
+// w lead-info.json.
+function filterLeadsForScrape(leads) {
+  const toScrape = [];
+  const skipped = [];
+  const seenDomains = new Set();
+  const seenPhones = new Set();
+  const seenPlaceIds = new Set();
+
+  for (const lead of leads) {
+    const domain = normalizeDomain(lead.url);
+    if (!lead.url || !domain || !/\./.test(domain)) {
+      skipped.push({ lead, powod: 'brak poprawnego URL' });
+      continue;
+    }
+    if (lead.permanentlyClosed) {
+      skipped.push({ lead, powod: 'firma zamknięta (permanentlyClosed)' });
+      continue;
+    }
+    const phone = normalizePhone(lead.telefon);
+    if (seenDomains.has(domain)) { skipped.push({ lead, powod: 'duplikat (domena)' }); continue; }
+    if (lead.placeId && seenPlaceIds.has(lead.placeId)) { skipped.push({ lead, powod: 'duplikat (placeId)' }); continue; }
+    if (phone && seenPhones.has(phone)) { skipped.push({ lead, powod: 'duplikat (telefon)' }); continue; }
+    seenDomains.add(domain);
+    if (lead.placeId) seenPlaceIds.add(lead.placeId);
+    if (phone) seenPhones.add(phone);
+    toScrape.push(lead);
+  }
+  return { toScrape, skipped };
+}
+
+// lead-info.json — dane wejściowe leada obok danych scrape, żeby Claude (kwalifikacja)
+// i batch-report.js miały identyfikację, kontekst Google Maps i blokadę kontaktu w jednym miejscu.
+// Dane Google Maps to KONTEKST biznesowy, nie dowód gotowości zakupowej (kryteria-audytu.md → wymiar B).
+function writeLeadInfo(lead, zrodloAudytu) {
+  const block = isContactBlocked(lead);
+  const info = {
+    lead_id: lead.lead_id ?? null,
+    nazwa: lead.nazwa || '',
+    miasto: lead.miasto ?? null,
+    url: lead.url,
+    telefon: lead.telefon ?? null,
+    email: lead.email ?? null,
+    imie_kontaktowe: lead.imie_kontaktowe ?? null,
+    status: lead.status ?? null,
+    do_not_contact: !!lead.do_not_contact,
+    notatki: lead.notatki ?? null,
+    data_M1: lead.data_M1 ?? null,
+    gmail_thread_id: lead.gmail_thread_id ?? null,
+    google_maps: {
+      totalScore: lead.totalScore ?? null,
+      reviewsCount: lead.reviewsCount ?? null,
+      imagesCount: lead.imagesCount ?? null,
+      categories: lead.categories || [],
+      placeId: lead.placeId ?? null,
+    },
+    mail_zablokowany: block.blocked,
+    powod_blokady: block.reason,
+    zrodlo_audytu: zrodloAudytu,
+  };
+  fs.writeFileSync(path.join(outDirFor(lead.url), 'lead-info.json'), JSON.stringify(info, null, 2));
+  return info;
 }
 
 // ── Tryb wsadowy: max 3 strony równolegle; błąd jednej nie przerywa reszty ──
 async function runBatch(csvPath) {
-  const rows = parseCsv(fs.readFileSync(csvPath, 'utf8'));
-  if (rows.length === 0) {
-    console.error('CSV pusty lub bez poprawnych wierszy (oczekiwane kolumny: nazwa,url).');
+  const { format, leads } = parseLeadsCsv(fs.readFileSync(csvPath, 'utf8'));
+  if (leads.length === 0) {
+    console.error('CSV pusty lub bez poprawnych wierszy (formaty: nazwa,url lub rozszerzony — patrz nagłówek scrape.js).');
     process.exit(1);
   }
-  const total = rows.length;
-  console.log(`Tryb wsadowy: ${total} kancelarii, max 3 równolegle.\n`);
+  const { toScrape, skipped } = filterLeadsForScrape(leads);
+  for (const s of skipped) {
+    console.log(`    ⊘ pomijam: ${s.lead.nazwa || s.lead.url || '(bez nazwy)'} — ${s.powod}`);
+  }
+
+  const zrodloAudytu = format === 'extended'
+    ? 'scrape_full+screenshots+google_maps'
+    : 'scrape_full+screenshots';
+  const total = toScrape.length;
+  console.log(`Tryb wsadowy (format CSV: ${format}): ${total} kancelarii do scrape (${skipped.length} pominiętych), max 3 równolegle.\n`);
 
   let started = 0, ok = 0, failed = 0;
-  const queue = [...rows];
+  const queue = [...toScrape];
   async function worker() {
     while (queue.length) {
-      const row = queue.shift();
+      const lead = queue.shift();
       const n = ++started;
-      console.log(`[${n}/${total}] Audytuję ${row.url} (${row.nazwa})...`);
+      console.log(`[${n}/${total}] Audytuję ${lead.url} (${lead.nazwa})...`);
       try {
-        await auditOne(row.url);
+        const info = writeLeadInfo(lead, zrodloAudytu);
+        if (info.mail_zablokowany) {
+          console.log(`    ⓘ [${n}/${total}] blokada kontaktu (${info.powod_blokady}) — audyt można zaktualizować, przekazanie do Claude_import NIE powstanie`);
+        }
+        await auditOne(lead.url);
         ok++;
-        console.log(`    ✓ [${n}/${total}] ${row.nazwa}`);
+        console.log(`    ✓ [${n}/${total}] ${lead.nazwa}`);
       } catch (e) {
         failed++;
-        console.error(`    ✗ [${n}/${total}] ${row.nazwa} — ${e.message}`);
-        try { fs.writeFileSync(path.join(outDirFor(row.url), 'scrape-error.txt'), e.message); }
+        console.error(`    ✗ [${n}/${total}] ${lead.nazwa} — ${e.message}`);
+        try { fs.writeFileSync(path.join(outDirFor(lead.url), 'scrape-error.txt'), e.message); }
         catch (_) { /* niepoprawna domena — pomijamy marker */ }
       }
     }
   }
   await Promise.all(Array.from({ length: Math.min(3, total) }, () => worker()));
 
-  console.log(`\nGotowe: ${ok} OK, ${failed} błędów (z ${total}).`);
-  console.log('Dalej: Claude czyta dane każdej strony i generuje audyt.md + audyt-dane.json + mail-fragment.txt (per kancelaria),');
-  console.log('a na końcu: node batch-report.js ' + path.basename(csvPath) + '  → output/batch-fragments.csv');
+  console.log(`\nGotowe: ${ok} OK, ${failed} błędów, ${skipped.length} pominiętych (z ${leads.length}).`);
+  console.log('Dalej: Claude czyta dane każdej strony i generuje audyt.md + audyt-dane.json + kwalifikacja-leada.md');
+  console.log('(tylko obserwacja_do_maila dla 7–8/8 PISAĆ bez blokady kontaktu — bez tematu/treści maila, patrz SKILL.md → Krok 5–6),');
+  console.log('a na końcu: node batch-report.js ' + path.basename(csvPath) + '  → output/batch-leady.csv (+ push-import.js dla rodzynków → Claude_import)');
 }
 
 // ── Etap 0 wsadowo: tylko screenshoty (bez Firecrawl/Lighthouse) — max 8 równolegle.
 //    Wyższa współbieżność niż --batch, bo to sam Playwright: nie ma limitu Firecrawl
 //    ani muteksu Lighthouse do respektowania.
 async function runPeekBatch(csvPath) {
-  const rows = parseCsv(fs.readFileSync(csvPath, 'utf8'));
-  if (rows.length === 0) {
-    console.error('CSV pusty lub bez poprawnych wierszy (oczekiwane kolumny: nazwa,url).');
+  const { leads } = parseLeadsCsv(fs.readFileSync(csvPath, 'utf8'));
+  if (leads.length === 0) {
+    console.error('CSV pusty lub bez poprawnych wierszy (formaty: nazwa,url lub rozszerzony).');
     process.exit(1);
   }
+  const { toScrape: rows, skipped } = filterLeadsForScrape(leads);
+  for (const s of skipped) {
+    console.log(`    ⊘ pomijam: ${s.lead.nazwa || s.lead.url || '(bez nazwy)'} — ${s.powod}`);
+  }
   const total = rows.length;
-  console.log(`Etap 0 wsadowo: ${total} kancelarii, max 8 równolegle.\n`);
+  console.log(`Etap 0 wsadowo: ${total} kancelarii (${skipped.length} pominiętych), max 8 równolegle.\n`);
 
   let started = 0, ok = 0, failed = 0;
   const queue = [...rows];
@@ -725,8 +835,9 @@ async function runPeekBatch(csvPath) {
     try {
       const { shot } = await peekScreenshot(url);
       console.log(`    ✓ screenshot → ${path.relative(path.join(__dirname, '..'), shot)}`);
-      console.log('Teraz Claude ogląda screenshot i odpowiada na 5 pytań Etapu 0 (kryteria-audytu.md → „Ocena leada").');
-      console.log('Jeśli werdykt 🔴 (odpuść) — zapisz lead-skip.txt i NIE uruchamiaj pełnego scrape.');
+      console.log('Teraz Claude ogląda screenshot i ocenia priorytet_wizualny (kryteria-audytu.md → Krok 0).');
+      console.log('To ocena WSTĘPNA (pewnosc_oceny: "wstepna", status_sugerowany: "DO_AUDYTU") — bez decyzji PISAĆ/ODPUŚCIĆ.');
+      console.log('Jeśli wizualnie brak potencjału — zapisz lead-skip.txt i NIE uruchamiaj pełnego scrape.');
     } catch (e) {
       console.error('    ✗ Podgląd nieudany:', e.message);
       process.exit(1);
@@ -758,6 +869,12 @@ async function runPeekBatch(csvPath) {
       console.log(`    ✓ podstrona aktualności: ostatni wpis ${n.lastPostDate || 'brak daty'}${n.lataOdWpisu != null ? ` (${n.lataOdWpisu} lat temu)` : ''} (${n.url})`);
     } else {
       console.log(`    ⚠ nie znaleziono podstrony „Aktualności" — brak danych do wymiaru D`);
+    }
+    if (content.contactPage?.found) {
+      const c = content.contactPage;
+      console.log(`    ✓ podstrona kontaktu: ${c.emails.length} email(i), ${c.phones.length} telefon(ów) (${c.url})`);
+    } else {
+      console.log(`    ⚠ nie znaleziono podstrony „Kontakt" — email do trackera tylko z tego, co na stronie głównej`);
     }
     if (vitals) console.log(`    ✓ performance: ${vitals.performanceScore ?? 'n/d'}, mobile: ${vitals.mobileFriendly}, schema: ${vitals.hasStructuredData}`);
     console.log(`\nGotowe → output/${domain}/`);

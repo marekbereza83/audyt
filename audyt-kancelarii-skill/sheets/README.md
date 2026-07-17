@@ -47,10 +47,15 @@ Bez tego URL serwuje starą wersję.
 
 Pierwsze **13** kolumn to kolumny **C..O Trackera**, w tej samej kolejności i pod tymi samymi
 nazwami (`Nazwa kancelarii` … `data_audytu`) — zatwierdzony blok wkleja się do Trackera bez
-mapowania pól. Pozostałe 8 (`potrzeba_0_2` … `data_dodania`) to ślad audytu: rozbicie punktacji
+mapowania pól. Kolejne 8 (`potrzeba_0_2` … `data_dodania`) to ślad audytu: rozbicie punktacji
 A/B/C/D, mocne przesłanki, co jest kosmetyką, odwiedzone podstrony. Do Trackera nie idą.
 
-Granicę bloku zaznacza pionowa linia po kolumnie 13.
+Ostatnia, **22.** kolumna to `status_importu` — webhook zawsze zapisuje `NOWY`. Druga
+automatyzacja (ChatGPT: weryfikacja, treść maila, szkic Gmail, aktualizacja Trackera) po
+przejęciu rekordu zmienia go ręcznie/programowo na `PRZEJĘTY`. Ten skrypt nigdy nie ustawia
+`PRZEJĘTY` — tylko odczytuje/zapisuje `NOWY` przy imporcie.
+
+Granicę bloku wklejanego do Trackera zaznacza pionowa linia po kolumnie 13.
 
 ## Dedup
 

@@ -1,0 +1,68 @@
+{
+  "_komentarz": "KANONICZNY SZABLON audyt-dane.json — kopiuj i wypełniaj przy każdym audycie. Trzy NIEZALEŻNE warstwy: (1) priorytet_wizualny — jak strona wygląda (Krok 0, nie wchodzi do score), (2) score_audytu_0_100 — jakość/kompletność strony (8 wymiarów; NIE prawdopodobieństwo zakupu), (3) kwalifikacja_leada.scoring_0_8 — szansa sprzedaży (A/B/C/D). Niski score 0-100 NIE oznacza automatycznie dobrego leada. PODZIAŁ ODPOWIEDZIALNOŚCI: Claude kończy na kwalifikacji + `przekazanie.obserwacja_do_maila` (krótki fakt, NIE temat/treść maila) — pełny mail M1, dedup finalny i szkic Gmail robi ChatGPT po przejęciu rekordu z zakładki `Claude_import`. Walidacja: node scripts/validate-lead.js <domena>.",
+
+  "lead_id": null,
+  "nazwa": "",
+  "miasto": null,
+  "url": "",
+  "telefon": null,
+  "email": null,
+  "imie_kontaktowe": null,
+  "data_audytu": "RRRR-MM-DD",
+  "zrodlo_audytu": "scrape_full+screenshots+google_maps",
+
+  "priorytet_wizualny": "wysoki | sredni | niski | do sprawdzenia",
+  "ocenaWizualna": {
+    "priorytet": "wysoki | sredni | niski | do sprawdzenia",
+    "wymiary": {
+      "aktualnoscDesignu": "ok | do sprawdzenia | problem",
+      "pierwszeWrazenie": "ok | do sprawdzenia | problem",
+      "spojnoscMarki": "ok | do sprawdzenia | problem",
+      "wiarygodnosc": "ok | do sprawdzenia | problem",
+      "swiezoscTresci": "ok | do sprawdzenia | problem"
+    },
+    "markery": []
+  },
+
+  "score_audytu_0_100": 0,
+  "tier_audytu": "wysoki | sredni | niski | krytyczny",
+
+  "kwalifikacja_leada": {
+    "decyzja": "PISAĆ | ODPUŚCIĆ (null gdy pewnosc_oceny != pelna)",
+    "scoring_0_8": {
+      "potrzeba_przebudowy": { "punkty": 0, "uzasadnienie": "wymiar A — z priorytet_wizualny + ageSignals + mobile" },
+      "potencjal_finansowy": { "punkty": 0, "uzasadnienie": "wymiar B — z teamPage + servicesPage + Google Maps (kontekst, nie dowód)" },
+      "skala_poprawy": { "punkty": 0, "uzasadnienie": "wymiar C — różnica między tym, czym kancelaria jest (B), a co pokazuje strona (A)" },
+      "naturalny_powod_kontaktu": { "punkty": 0, "uzasadnienie": "wymiar D — z newsPage.lastPostDate / konkretnego błędu ze zrzutu" },
+      "razem": 0
+    },
+    "glowny_problem": "jedno zdanie/fraza — największy problem uzasadniający ALBO podważający potrzebę nowej strony; nie lista braków",
+    "powod_biznesowy": "1-2 zdania: co właściciel realnie zyska, albo dlaczego 4500-6500 zł nie jest teraz uzasadnione; bez obietnic wzrostu sprzedaży",
+    "mocne_przeslanki": [],
+    "co_jest_kosmetyka": [],
+    "sprawdzone_podstrony": [],
+    "pewnosc_oceny": "pelna | wstepna | niewystarczajace_dane"
+  },
+
+  "przekazanie": {
+    "do_importu": false,
+    "obserwacja_do_maila": null
+  },
+
+  "status_sugerowany": "DO_AUDYTU | ODPUŚCIĆ | DO_IMPORTU | null (null gdy blokada kontaktu — zachowaj istniejący status operacyjny). DO_IMPORTU zastępuje dawne MAIL_GOTOWY — Claude nie generuje maila, tylko kwalifikuje i przekazuje do Claude_import.",
+
+  "wymiary": [
+    {
+      "nr": 1,
+      "wymiar": "nazwa wymiaru z kryteria-audytu.md",
+      "waga": 15,
+      "status": "dobrze | do-poprawy | brak",
+      "punkty": 0,
+      "podstawa": "konkretne pole z content.json/vitals.json lub obserwacja ze screenshota"
+    }
+  ],
+
+  "benchmark": {
+    "qualityMedian": 60
+  }
+}

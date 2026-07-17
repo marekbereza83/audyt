@@ -19,6 +19,8 @@ const ARKUSZ_TRACKER = 'Tracker';
  * Pierwsze 13 to kolumny C..O „Trackera" w dokładnie tej samej kolejności i pod tymi samymi
  * nazwami — dzięki temu zatwierdzony blok wkleja się do Trackera bez mapowania pól.
  * Reszta to ślad audytu (rozbicie punktacji, przesłanki) — zostaje w imporcie, do Trackera nie idzie.
+ * `status_importu` (ostatnia) śledzi przejęcie rekordu przez drugą automatyzację (ChatGPT):
+ * ten webhook zawsze zapisuje „NOWY" — na „PRZEJĘTY" zmienia go już tamta automatyzacja.
  */
 const KOLUMNY = [
   'Nazwa kancelarii', 'Miasto', 'Strona www', 'Telefon', 'Email',
@@ -27,8 +29,10 @@ const KOLUMNY = [
   // ── poniżej: wyłącznie Claude_import, nie ma odpowiednika w Trackerze ──
   'potrzeba_0_2', 'potencjal_0_2', 'skala_poprawy_0_2', 'powod_kontaktu_0_2',
   'mocne_przeslanki', 'co_jest_kosmetyka', 'sprawdzone_podstrony', 'data_dodania',
+  'status_importu',
 ];
 const BLOK_TRACKERA = 13; // ile pierwszych kolumn wkleja się 1:1 do Trackera (C..O)
+const STATUS_IMPORTU_NOWY = 'NOWY';
 
 // ── Normalizacja kluczy dedupu ───────────────────────────────────────
 // Kolejność ważności: email > telefon > domena. Email jest w Trackerze wypełniony wszędzie
@@ -236,7 +240,8 @@ function doPost(e) {
       }
 
       klucze.forEach(k => znane.add(k));   // dedup także wewnątrz jednej paczki
-      doZapisu.push(KOLUMNY.map(k => (lead[k] != null ? lead[k] : '')));
+      // status_importu zawsze NOWY przy zapisie — cokolwiek przyszło w payloadzie, ignorujemy.
+      doZapisu.push(KOLUMNY.map(k => (k === 'status_importu' ? STATUS_IMPORTU_NOWY : (lead[k] != null ? lead[k] : ''))));
       raport.zapisane.push(nazwa);
     }
 

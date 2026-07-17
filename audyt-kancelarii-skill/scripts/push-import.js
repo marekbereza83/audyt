@@ -23,6 +23,11 @@
  *
  * Dedup i filtr 7–8/8 robi skrypt po stronie arkusza (atomowo, pod blokadą) — tutaj
  * tylko walidujemy kształt, żeby nie wysyłać oczywistych śmieci.
+ *
+ * Nie wysyłaj tematu ani treści maila (temat_M1/tresc_M1) — Claude kończy na
+ * `obserwacja_do_maila`; pełny mail M1 i szkic Gmail powstają po stronie ChatGPT z
+ * zakładki „Claude_import" (kolumna `status_importu`, którą webhook zawsze zapisuje
+ * jako „NOWY" — wartość w payloadzie, jeśli jakąś wyślesz, jest ignorowana).
  */
 
 require('dotenv').config({ override: true });

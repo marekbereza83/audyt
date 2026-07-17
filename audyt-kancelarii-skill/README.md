@@ -41,12 +41,18 @@ Claude uruchomi `scrape.js`, przeczyta dane, oceni wg kryteriów i wygeneruje `o
 ```bash
 node scrape.js <url>                    # audyt jednej strony
 node scrape.js <url> <url-konkurenta>   # audyt + porównanie z konkretnym konkurentem
-node scrape.js --batch lista.csv        # tryb wsadowy: cała lista naraz (CSV: nazwa,url)
+node scrape.js --peek <url>             # Etap 0: tylko screenshot (bez Firecrawl), ocena wstępna
+node scrape.js --peek-batch lista.csv   # Etap 0 wsadowo, max 8 równolegle (sam Playwright)
+node scrape.js --batch lista.csv        # tryb wsadowy: cała lista naraz (pełny scrape)
 ```
+
+`lista.csv` (oba tryby wsadowe) — dwa formaty, rozpoznawane po nagłówku (parser: `scripts/csv-utils.js`): legacy `nazwa,url`, albo rozszerzony `lead_id,nazwa,miasto,url,telefon,email,imie_kontaktowe,status,do_not_contact,notatki,data_M1,gmail_thread_id,totalScore,reviewsCount,imagesCount,categories,placeId,permanentlyClosed` (kolejność kolumn dowolna).
 
 Drugi argument (konkurent) jest opcjonalny. Gdy podany, scraper zapisze dodatkowo `competitor.json` (treść + wydajność konkurenta), a raport zyska sekcję **„Co robi konkurencja"** — 2–3 rzeczy, które konkurent ma, a audytowana strona nie (np. „ma HTTPS i CTA w hero").
 
-Każda rekomendacja w raporcie ma oznaczenie **wysiłek → efekt** (np. „HTTPS → 1 wieczór, efekt natychmiastowy") wg „Mapy wysiłek/efekt" w `reference/kryteria-audytu.md`; tanie poprawki o wysokim efekcie są listowane pierwsze. Każdy audyt zapisuje też `mail-fragment.txt` — 2–4 zdania gotowe do wklejenia w cold mail.
+Każda rekomendacja w raporcie ma oznaczenie **wysiłek → efekt** (np. „HTTPS → 1 wieczór, efekt natychmiastowy") wg „Mapy wysiłek/efekt" w `reference/kryteria-audytu.md`; tanie poprawki o wysokim efekcie są listowane pierwsze.
+
+**Kwalifikacja leada (Krok 5) i obserwacja do maila.** Osobno od score konwersji Claude ocenia, czy ta konkretna kancelaria to szansa sprzedaży (4 wymiary A/B/C/D, suma 0–8 → `PISAĆ`/`ODPUŚCIĆ`, patrz `reference/kryteria-audytu.md` → „Ocena leada"). **Tylko dla `PISAĆ` (7–8/8) bez blokady kontaktu** audyt zapisuje `mail-observation.txt` — krótki, faktograficzny hak + jedno pytanie otwarte. To materiał wejściowy dla drugiej automatyzacji (ChatGPT), nie gotowy mail: **Claude nie pisze tematu ani treści maila i nie wysyła niczego** (`SKILL.md` → Krok 6).
 
 ### Tryb wsadowy (cała lista z trackera)
 
@@ -54,13 +60,17 @@ Każda rekomendacja w raporcie ma oznaczenie **wysiłek → efekt** (np. „HTTP
 # 1. Scrape całej listy (max 3 strony równolegle, błąd jednej nie przerywa reszty)
 node scrape.js --batch lista.csv
 
-# 2. (Claude generuje audyt.md + mail-fragment.txt dla każdej kancelarii z listy)
+# 2. (Claude generuje audyt.md + audyt-dane.json dla każdej kancelarii z listy;
+#     mail-observation.txt tylko dla PISAĆ. Po każdej: node validate-lead.js <domena>)
 
-# 3. Zbiorczy plik do trackera
-node batch-report.js lista.csv          # → output/batch-fragments.csv
+# 3. Zbiorczy raport lokalny
+node batch-report.js lista.csv          # → output/batch-leady.csv (główny raport)
+
+# 4. Rodzynki 7–8/8 (PISAĆ) do arkusza Claude_import (status_importu: NOWY)
+node push-import.js leady.json
 ```
 
-`batch-fragments.csv` ma kolumny `nazwa,url,fragment_do_maila,score,priorytet_glowny` (BOM UTF-8 + CRLF — Excel otworzy polskie znaki). Kolumna `fragment_do_maila` jest gotowa do wklejenia do kolumny „Obserwacja" w trackerze; strony, które zawiodły, mają `BŁĄD: <powód>`.
+`batch-leady.csv` (BOM UTF-8 + CRLF, separator `;` — Excel otworzy polskie znaki) ma m.in. kolumny `decyzja`, `scoring_0_8`, `obserwacja_do_maila`, `status_sugerowany`, `score_audytu_0_100`, `tier_audytu`, `pewnosc_oceny`, `mocne_przeslanki`, `co_jest_kosmetyka`. Sortowanie: `PISAĆ` → `ODPUŚCIĆ` → wstępne/do ponownego audytu; w ramach decyzji scoring malejąco. Obok powstają `batch-pominiete.csv` (blokady, duplikaty, firmy zamknięte, zły URL) i `batch-nieudane.csv` (nieudane scrapy — do ręcznej weryfikacji, batch nie ponawia). `batch-fragments.csv` zostaje jako zgodność wsteczna, nie jest już głównym wynikiem.
 
 **Jak wyeksportować `lista.csv` z trackera Excel:**
 1. W trackerze zostaw tylko dwie kolumny: **Nazwa** (kol. B) i **Strona www** (kol. D). Najprościej: nowy arkusz z nagłówkiem `nazwa,url` i formułą `=Tracker!B2` / `=Tracker!D2` w dół, potem skopiuj jako wartości.
@@ -73,14 +83,24 @@ node batch-report.js lista.csv          # → output/batch-fragments.csv
 audyt-kancelarii/
 ├── SKILL.md                          ← instrukcja dla Claude (workflow)
 ├── reference/
-│   ├── kryteria-audytu.md            ← 8 wymiarów + punktacja
+│   ├── kryteria-audytu.md            ← 8 wymiarów + punktacja + „Ocena leada"
 │   ├── benchmark-pl-law.json         ← agregaty z 21 kancelarii
-│   └── szablon-raportu.md            ← format raportu PL
+│   ├── szablon-raportu.md            ← format raportu PL
+│   └── schemat-audyt-dane.json       ← kanoniczny szablon audyt-dane.json
+├── sheets/
+│   ├── Code.gs                       ← webhook Apps Script: zapis + dedup w Claude_import
+│   └── README.md                     ← wdrożenie webhooka (jednorazowe)
 └── scripts/
-    ├── scrape.js                     ← Firecrawl + Playwright + Lighthouse (single + --batch)
-    ├── batch-report.js               ← zbiera wyniki batcha → output/batch-fragments.csv
+    ├── scrape.js                     ← Firecrawl + Playwright + Lighthouse (single, --peek, --peek-batch, --batch)
+    ├── csv-utils.js                  ← wspólny parser CSV (legacy/rozszerzony) + normalizacja/dedup
+    ├── batch-report.js               ← zbiera wyniki batcha → output/batch-leady.csv
+    ├── validate-lead.js              ← waliduje audyt-dane.json przed przekazaniem dalej
+    ├── push-import.js                ← wysyła rodzynki 7–8/8 do zakładki Claude_import
+    ├── log-odrzucone.js              ← loguje lokalnie leady 5–6/8 (nie audytować drugi raz)
     └── package.json
 ```
+
+Pipeline odpowiedzialności: `Apify/prospecting → Claude (scrape + audyt + kwalifikacja) → Claude_import (status_importu: NOWY) → ChatGPT (weryfikacja, treść maila, szkic Gmail, aktualizacja Trackera) → człowiek (przegląd i ręczna wysyłka)`. Claude nigdy nie pisze ani nie wysyła treści maila.
 
 ## Kalibracja na złej stronie testowej
 

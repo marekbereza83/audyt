@@ -68,8 +68,18 @@ Markery: ©2017 w stopce · teksturowane tło · wąska ramka · ostatni wpis 20
 ## Ocena leada — 4 wymiary, 0–8 (kwalifikacja wewnętrzna, poza score)
 
 **To nie jest ocena strony — to ocena szansy sprzedaży.** Zapisywana w trackerze jako
-`scoring_0_8` + `decyzja`. **Nigdy nie trafia do `mail-fragment.txt` ani do maila** — odbiorca
+`scoring_0_8` + `decyzja`. **Nigdy nie trafia do `mail-observation.txt` ani do maila** — odbiorca
 nie ma wiedzieć, że go punktujemy.
+
+**Trzy niezależne warstwy — nigdy nie myl ich w rozmowie ani w raporcie:**
+
+1. `priorytet_wizualny` (Krok 0) — jak strona **wygląda** oczami klienta. Nie wchodzi do score.
+2. `score_audytu_0_100` + `tier_audytu` — jakość/kompletność strony pod kątem konwersji (8 wymiarów niżej). To NIE jest prawdopodobieństwo zakupu — nigdy nie pisz gołego „score" bez podania skali (0–100 vs 0–8), bo to dwie różne liczby.
+3. `kwalifikacja_leada.scoring_0_8` (ten rozdział) — szansa sprzedaży (A/B/C/D).
+
+**Niski `score_audytu_0_100` NIE oznacza automatycznie dobrego leada** — strona może być słaba technicznie, a kancelaria mimo to nie mieć budżetu ani powodu do kontaktu (0–4/8). I odwrotnie: solidna strona (score 70+) może mieć jeden bardzo konkretny, świeży powód do kontaktu i wysoki scoring 0–8.
+
+**Podział odpowiedzialności (patrz SKILL.md → Krok 6):** Claude kończy na kwalifikacji i krótkiej, faktograficznej `obserwacja_do_maila` — nie pisze tematu ani treści maila M1/FU1/FU2, nie tworzy szkicu Gmail, nie wysyła i nie aktualizuje Trackera. To robi druga automatyzacja (ChatGPT) po przejęciu rekordu z zakładki `Claude_import`. Kanoniczny szablon pól: `reference/schemat-audyt-dane.json`; walidacja przed przekazaniem dalej: `node scripts/validate-lead.js <domena>`.
 
 **Pytanie przewodnie:** czy właściciel tej kancelarii ma widoczny, biznesowo uzasadniony powód,
 żeby zapłacić **4 500–6 500 zł** za nową stronę?
@@ -98,7 +108,7 @@ Skąd brać dane do każdego wymiaru:
 | Wymiar | Główne źródło | Uwaga |
 |---|---|---|
 | A | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ A2, `sredni` ≈ A1, `niski` ≈ A0. To punkt wyjścia, nie automat |
-| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2 |
+| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` |
 | C | różnica między tym, czym kancelaria jest (B), a tym, co pokazuje strona (A) | „łatwa do pokazania" = dasz się to opisać w jednym zdaniu maila |
 | D | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1 |
 
@@ -292,7 +302,7 @@ Suma punktów z 8 wymiarów = score 0–100.
 | 80–100 | Wysoki | Strona konwertuje dobrze, drobne usprawnienia |
 | 55–79 | Średni | Solidna baza, kilka realnych luk (większość rynku tu jest — mediana benchmarku to 60) |
 | 30–54 | Niski | Poważne braki konwersji, duży potencjał poprawy |
-| 0–29 | Krytyczny | Strona aktywnie traci klientów |
+| 0–29 | Krytyczny | Strona ma liczne braki utrudniające kontakt i budowę zaufania |
 
 Przy każdym audycie podaj score i tier, oraz porównanie do mediany benchmarku (60/100).
 

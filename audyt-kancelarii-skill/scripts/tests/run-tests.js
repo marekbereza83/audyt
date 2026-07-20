@@ -490,10 +490,88 @@ test('batch-pominiete.csv: duplikaty domeny i firmy zamknięte', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════
+section('sheet-keys.js — normalizacja luster Code.gs');
+// ═══════════════════════════════════════════════════════════════════════
+
+const sheetKeys = require('../sheet-keys.js');
+
+test('normDomena obcina schemat, www, ścieżkę i port', () => {
+  assert.equal(sheetKeys.normDomena('https://www.kancelaria.pl/uslugi?a=1'), 'kancelaria.pl');
+  assert.equal(sheetKeys.normDomena('http://kancelaria.pl:8080'), 'kancelaria.pl');
+});
+
+test('normDomena zwraca null dla tekstu, który nie jest domeną („Adwokat Ełk")', () => {
+  assert.equal(sheetKeys.normDomena('Adwokat Ełk'), null);
+  assert.equal(sheetKeys.normDomena(''), null);
+});
+
+test('normTel bierze ostatnie 9 cyfr — radzi sobie z +48 i 0048', () => {
+  assert.equal(sheetKeys.normTel('+48 784 997 671'), '784997671');
+  assert.equal(sheetKeys.normTel('0048784997671'), '784997671');
+  assert.equal(sheetKeys.normTel('12345'), null);
+});
+
+test('kluczeRekordu produkuje prefiksy e:/t:/d: zgodne z arkuszem', () => {
+  const k = sheetKeys.kluczeRekordu({ www: 'https://www.x.pl/a', tel: '+48 111 222 333', email: 'A@X.PL' });
+  assert.deepEqual(k.sort(), ['d:x.pl', 'e:a@x.pl', 't:111222333']);
+});
+
+test('kluczeRekordu pomija pola nieidentyfikowalne', () => {
+  assert.deepEqual(sheetKeys.kluczeRekordu({ www: 'Adwokat Ełk', tel: '', email: 'nie-email' }), []);
+});
+
+// ═══════════════════════════════════════════════════════════════════════
+section('dedup-gate.js (proces potomny, fixture output/)');
+// ═══════════════════════════════════════════════════════════════════════
+
+test('odsiewa: brak www, zamknięte, duplikat w paczce, zaudytowane, odrzucone wcześniej', () => {
+  const base = mkFixtureDir();
+  const out = path.join(base, 'out');
+  fs.mkdirSync(path.join(out, 'kancelariatopor.pl'), { recursive: true });
+  fs.writeFileSync(path.join(out, 'kancelariatopor.pl', 'audyt-dane.json'), '{"score":50}');
+  fs.writeFileSync(
+    path.join(out, 'odrzucone.csv'),
+    '﻿domena;scoring_0_8;powod;data\r\nadwokat-testowy.pl;5;za slabo;2026-07-01\r\n', 'utf8'
+  );
+
+  // URL-e celowo z www/ścieżką — dedup musi porównywać znormalizowaną domenę,
+  // nie nazwę katalogu z domainOf() (regresja: „www.x.pl_kontakt" ≠ „x.pl").
+  const wejscie = [
+    { title: 'Topor', website: 'https://kancelariatopor.pl/', phone: '+48 784 997 671', placeId: 'A' },
+    { title: 'Testowy', website: 'http://www.adwokat-testowy.pl/kontakt', phone: '+48 111 222 333', placeId: 'B' },
+    { title: 'Nowa', website: 'https://nowa-kancelaria.pl', phone: '+48 500 600 700', placeId: 'C' },
+    { title: 'Duplikat', website: 'https://nowa-kancelaria.pl/o-nas', phone: '+48 999 888 777', placeId: 'D' },
+    { title: 'Zamknieta', website: 'https://zamknieta.pl', permanentlyClosed: true, placeId: 'E' },
+    { title: 'Bez www', website: '', placeId: 'F' },
+  ];
+  const wePath = path.join(base, 'we.json');
+  fs.writeFileSync(wePath, JSON.stringify(wejscie), 'utf8');
+
+  execFileSync(process.execPath, ['dedup-gate.js', wePath, '--offline'], {
+    cwd: SCRIPTS_DIR,
+    env: { ...process.env, AUDYT_OUTPUT_DIR: out },
+    encoding: 'utf8',
+  });
+
+  const doPeek = fs.readFileSync(path.join(out, 'do-peek.csv'), 'utf8');
+  const wiersze = doPeek.replace(/^﻿/, '').trim().split(/\r\n/).slice(1);
+  assert.equal(wiersze.length, 1, 'przez bramkę ma przejść dokładnie 1 rekord');
+  assert.ok(wiersze[0].includes('nowa-kancelaria.pl'), 'przejść ma „Nowa"');
+
+  const pom = fs.readFileSync(path.join(out, 'dedup-pominiete.csv'), 'utf8');
+  assert.ok(pom.includes('już zaudytowana lokalnie'), 'brak powodu: zaudytowana');
+  assert.ok(pom.includes('odrzucona wcześniej'), 'brak powodu: odrzucona wcześniej');
+  assert.ok(pom.includes('duplikat w paczce'), 'brak powodu: duplikat');
+  assert.ok(pom.includes('firma zamknięta'), 'brak powodu: zamknięta');
+  assert.ok(pom.includes('brak poprawnego adresu www'), 'brak powodu: brak www');
+});
+
+// ═══════════════════════════════════════════════════════════════════════
 section('node --check — składnia skryptów');
 // ═══════════════════════════════════════════════════════════════════════
 
-['scrape.js', 'csv-utils.js', 'batch-report.js', 'validate-lead.js', 'push-import.js', 'log-odrzucone.js']
+['scrape.js', 'csv-utils.js', 'batch-report.js', 'validate-lead.js', 'push-import.js', 'log-odrzucone.js',
+ 'sheet-keys.js', 'apify-search.js', 'dedup-gate.js']
   .forEach(f => {
     test(`node --check ${f}`, () => {
       execFileSync(process.execPath, ['--check', f], { cwd: SCRIPTS_DIR });

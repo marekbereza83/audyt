@@ -161,8 +161,31 @@ function odpowiedz(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
 }
 
-/** GET — sprawdzenie, czy wdrożenie żyje. Nie zwraca danych z arkusza. */
-function doGet() {
+/**
+ * GET — dwa tryby:
+ *
+ *   (bez parametrów)              ping: czy wdrożenie żyje. Nie zwraca danych z arkusza,
+ *                                 nie wymaga sekretu (działa przed setup(), patrz push-import.js).
+ *   ?akcja=klucze&sekret=...      klucze dedupu z „Trackera" + „Claude_import" — pozwala odsiać
+ *                                 znane kancelarie ZANIM audyt spali budżet Firecrawl.
+ *
+ * Tryb `klucze` wymaga sekretu: zwraca zbiorczą listę e-maili/telefonów/domen z arkusza,
+ * czyli listę kontaktów klientów. Ten sam sekret autoryzuje zapis dowolnych wierszy przez
+ * doPost, więc nie poszerza to granicy zaufania — ale bez sekretu endpoint milczy.
+ */
+function doGet(e) {
+  const akcja = (e && e.parameter && e.parameter.akcja) || '';
+
+  if (akcja === 'klucze') {
+    const sekret = PropertiesService.getScriptProperties().getProperty('SEKRET');
+    if (!sekret || !e.parameter.sekret || e.parameter.sekret !== sekret) {
+      return odpowiedz({ ok: false, blad: 'zły sekret' });
+    }
+    const klucze = new Set();
+    [ARKUSZ_TRACKER, ARKUSZ_IMPORT].forEach(n => zbierzKlucze(n).forEach(k => klucze.add(k)));
+    return odpowiedz({ ok: true, klucze: Array.from(klucze) });
+  }
+
   const sh = SpreadsheetApp.getActive().getSheetByName(ARKUSZ_IMPORT);
   return odpowiedz({ ok: true, import_gotowy: !!sh, kolumny: KOLUMNY.length });
 }

@@ -5,7 +5,7 @@
  *   node scrape.js <url> [<url-konkurenta>]    — pojedyncza strona (+ opcjonalny konkurent)
  *   node scrape.js --peek <url>                — Etap 0: tylko screenshot (bez Firecrawl), ocena wstępna
  *   node scrape.js --peek-batch <lista.csv>    — Etap 0 wsadowo, max 8 równolegle (sam Playwright)
- *   node scrape.js --batch <lista.csv>         — tryb wsadowy (pełny scrape), max 3 równolegle
+ *   node scrape.js --batch <lista.csv>         — tryb wsadowy (pełny scrape), domyślnie 2 równolegle
  * Wymaga: FIRECRAWL_API_KEY w .env lub w env, zainstalowany chromium (npx playwright install chromium)
  *
  * CSV wejściowy (oba tryby wsadowe) — dwa formaty, rozpoznawane po nagłówku (parser: csv-utils.js):
@@ -46,6 +46,19 @@ const path = require('path');
 const {
   domainOf, normalizeDomain, normalizePhone, parseLeadsCsv, isContactBlocked,
 } = require('./csv-utils');
+const budzet = require('./budzet');
+
+// Ile audytów naraz w trybie --batch. Darmowy plan Firecrawl dopuszcza 2 równoległe żądania
+// (i ma niskie limity szybkości), więc 2 jest domyślną wartością bezpieczną — wcześniejsze
+// 3 przekraczało limit współbieżności i wywoływało błędy rate-limitu. Na płatnym planie
+// podnieś przez FIRECRAWL_ROWNOLEGLE w scripts/.env.
+const ROWNOLEGLE = Number(process.env.FIRECRAWL_ROWNOLEGLE || 2);
+
+// Które podstrony dociągać (koszt = 1 wywołanie Firecrawl każda). Domyślnie wszystkie —
+// patrz komentarz przy pętli w scrapePage(): cięcie `team` wprost zabija wymiar B, więc
+// oszczędza budżet kosztem trafień. Ustaw np. FIRECRAWL_PODSTRONY=contact do taniego przeglądu.
+const PODSTRONY_AKTYWNE = (process.env.FIRECRAWL_PODSTRONY || 'services,team,news,contact')
+  .split(',').map(s => s.trim()).filter(Boolean);
 
 const arg1 = process.argv[2];
 if (!arg1) {
@@ -60,7 +73,7 @@ function outDirFor(u) {
 }
 
 // Muteks na Lighthouse: używa on globalnych performance.mark, więc dwa równoległe pomiary
-// w tym samym procesie (batch, max 3 naraz) kolidują. Serializujemy TYLKO Lighthouse —
+// w tym samym procesie (batch) kolidują. Serializujemy TYLKO Lighthouse —
 // Firecrawl i Playwright dalej idą równolegle (to one dają zysk z batcha).
 let lighthouseLock = Promise.resolve();
 function withLighthouseLock(fn) {
@@ -491,12 +504,21 @@ async function scrapeContent(targetUrl, { withSubpages = false } = {}) {
   //   newsPage     — wymiar D oceny leada + świeżość treści (data ostatniego wpisu)
   //   contactPage  — email/telefony do trackera (email często jest tylko tam)
   // Kolejność ma znaczenie: `zajete` pilnuje, by ta sama strona nie trafiła w dwa pola.
-  // Koszt: do 4 dodatkowych wywołań Firecrawl na kancelarię (+1 mapUrl przy fallbacku) —
-  // przy limicie ~500 stron/mies to ~80–100 pełnych audytów miesięcznie.
+  //
+  // Koszt: do 4 dodatkowych wywołań Firecrawl na kancelarię (+1 mapUrl przy fallbacku),
+  // czyli ~5 stron na audyt. Przy darmowym planie 1 000 stron/mies to ~200 pełnych audytów.
+  //
+  // Zestaw podstron jest przełączalny przez FIRECRAWL_PODSTRONY (lista po przecinku).
+  // Domyślnie wszystkie cztery — NIE tnij ich „na oszczędność" bez potrzeby: `team` żywi
+  // wymiar B, a bez B2 lead praktycznie nigdy nie dobije do 7–8/8 (kryteria-audytu.md),
+  // więc tańszy audyt daje po prostu więcej audytów, które nie znajdują rodzynków.
+  // Sensowne cięcie to `contact` (sam email do arkusza) przy przeglądzie masowym.
   if (withSubpages) {
     const cache = {};          // wynik mapUrl — jedno wywołanie API na kancelarię
     const zajete = new Set();
-    for (const [typ, pole] of [['services', 'servicesPage'], ['team', 'teamPage'], ['news', 'newsPage'], ['contact', 'contactPage']]) {
+    const wybrane = PODSTRONY_AKTYWNE;
+    const wszystkie = [['services', 'servicesPage'], ['team', 'teamPage'], ['news', 'newsPage'], ['contact', 'contactPage']];
+    for (const [typ, pole] of wszystkie.filter(([t]) => wybrane.includes(t))) {
       try {
         content[pole] = await fetchSubpage(app, md, targetUrl, typ, cache, zajete);
       } catch (e) {
@@ -721,7 +743,7 @@ function writeLeadInfo(lead, zrodloAudytu) {
   return info;
 }
 
-// ── Tryb wsadowy: max 3 strony równolegle; błąd jednej nie przerywa reszty ──
+// ── Tryb wsadowy: ROWNOLEGLE stron naraz; błąd jednej nie przerywa reszty ──
 async function runBatch(csvPath) {
   const { format, leads } = parseLeadsCsv(fs.readFileSync(csvPath, 'utf8'));
   if (leads.length === 0) {
@@ -736,8 +758,24 @@ async function runBatch(csvPath) {
   const zrodloAudytu = format === 'extended'
     ? 'scrape_full+screenshots+google_maps'
     : 'scrape_full+screenshots';
+
+  // Hamulec budżetu Firecrawl — najdroższa bramka pipeline'u i jedyna z twardym sufitem.
+  // Przycinamy kolejkę ZANIM ruszy scrape, zamiast wyczerpać limit w połowie paczki.
+  const stanBudzetu = budzet.sprawdz(toScrape.length);
+  console.log(budzet.opis());
+  if (stanBudzetu.przytnij === 0) {
+    console.error(`\n✗ Budżet wyczerpany (${stanBudzetu.zuzyte}/${stanBudzetu.limit}). Nie uruchamiam audytów.`);
+    console.error(`  Limit zmienisz przez FIRECRAWL_LIMIT_AUDYTOW w scripts/.env.`);
+    process.exit(1);
+  }
+  if (!stanBudzetu.mozna) {
+    console.log(`⚠ Paczka (${toScrape.length}) przekracza budżet — przycinam do ${stanBudzetu.przytnij}.`);
+    console.log(`  Reszta zostaje w CSV; dokończysz po odnowieniu limitu albo po podniesieniu FIRECRAWL_LIMIT_AUDYTOW.`);
+    toScrape.length = stanBudzetu.przytnij;
+  }
+
   const total = toScrape.length;
-  console.log(`Tryb wsadowy (format CSV: ${format}): ${total} kancelarii do scrape (${skipped.length} pominiętych), max 3 równolegle.\n`);
+  console.log(`Tryb wsadowy (format CSV: ${format}): ${total} kancelarii do scrape (${skipped.length} pominiętych), ${ROWNOLEGLE} równolegle.\n`);
 
   let started = 0, ok = 0, failed = 0;
   const queue = [...toScrape];
@@ -752,6 +790,7 @@ async function runBatch(csvPath) {
           console.log(`    ⓘ [${n}/${total}] blokada kontaktu (${info.powod_blokady}) — audyt można zaktualizować, przekazanie do Claude_import NIE powstanie`);
         }
         await auditOne(lead.url);
+        budzet.dolicz(1);
         ok++;
         console.log(`    ✓ [${n}/${total}] ${lead.nazwa}`);
       } catch (e) {
@@ -762,7 +801,7 @@ async function runBatch(csvPath) {
       }
     }
   }
-  await Promise.all(Array.from({ length: Math.min(3, total) }, () => worker()));
+  await Promise.all(Array.from({ length: Math.min(ROWNOLEGLE, total) }, () => worker()));
 
   console.log(`\nGotowe: ${ok} OK, ${failed} błędów, ${skipped.length} pominiętych (z ${leads.length}).`);
   console.log('Dalej: Claude czyta dane każdej strony i generuje audyt.md + audyt-dane.json + kwalifikacja-leada.md');

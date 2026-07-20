@@ -19,6 +19,22 @@ Workflow krok po kroku opisuje `SKILL.md`. **Kalibracja jest zakończona — nar
 ## Komendy
 
 ```bash
+# ── Prospecting: bramki od najtańszej do najdroższej ──
+# 1. Apify — kosztorys (nic nie płaci); realny run wymaga jawnego --tak
+node apify-search.js --query "kancelaria adwokacka" --gdzie "Katowice" --max 100
+node apify-search.js --query "..." --gdzie "..." --max 100 --tak   # PŁATNE
+node apify-search.js --dataset <id>    # pobierz gotowy dataset z konta, bez kosztu
+node apify-search.js --runy            # ostatnie uruchomienia + realny koszt
+
+# 2. Dedup (DARMOWE) — odsiew wzgl. Trackera/Claude_import PRZED wydaniem budżetu
+node dedup-gate.js output/apify/<plik>.json      # → output/do-peek.csv
+
+# 3. Triage wizualny (DARMOWE, sam Playwright)
+node scrape.js --peek-batch output/do-peek.csv
+
+# 4. Pełny audyt (DROGIE — liczone w budżecie Firecrawl)
+node scrape.js --batch <lista.csv>
+
 # Pojedynczy audyt
 cd scripts && node scrape.js https://kancelaria.pl
 
@@ -38,7 +54,13 @@ node validate-lead.js <domena>   # albo --all
 node push-import.js <leady.json>
 ```
 
-Klucz Firecrawl wczytywany z `scripts/.env` (`override: true` — nadpisuje ewentualną starą wartość z env systemowego). Jeden pełny audyt (strona główna + do 4 podstron: usługi/zespół/aktualności/kontakt) to do ~5 wywołań Firecrawl (+1 `mapUrl` przy fallbacku) i trwa ~60–90 s — przy darmowym limicie ~500 stron/mies daje to ~80–100 pełnych audytów miesięcznie. Wyjście: `output/<domena>/` (gitignorowane).
+Klucz Firecrawl wczytywany z `scripts/.env` (`override: true` — nadpisuje ewentualną starą wartość z env systemowego). Jeden pełny audyt (strona główna + do 4 podstron: usługi/zespół/aktualności/kontakt) to do ~5 wywołań Firecrawl (+1 `mapUrl` przy fallbacku) i trwa ~60–90 s — przy darmowym planie **1 000 stron/mies** daje to **~200 pełnych audytów miesięcznie** (zweryfikowane w cenniku 2026-07; wcześniejszy zapis „~500 stron / 80–100 audytów" był zaniżony dwukrotnie). Wyjście: `output/<domena>/` (gitignorowane).
+
+Darmowy plan dopuszcza też tylko **2 równoległe żądania**, dlatego `--batch` domyślnie puszcza 2 naraz (`FIRECRAWL_ROWNOLEGLE`), nie 3 jak wcześniej — 3 przekraczało limit współbieżności.
+
+Licznik zużycia: `scripts/budzet.js` → `output/budzet-firecrawl.json`, limit `FIRECRAWL_LIMIT_AUDYTOW` (domyślnie 160, czyli ~20% zapasu pod 200). `--batch` przycina paczkę, zanim ruszy, zamiast wyczerpać limit w połowie. Licznik jest lokalny — przy pracy z dwóch komputerów każdy liczy swoje.
+
+Zestaw dociąganych podstron: `FIRECRAWL_PODSTRONY` (domyślnie `services,team,news,contact`). **Nie tnij go „na oszczędność"** — bez `team` wymiar B siada, a bez B2 lead prawie nigdy nie dobija do 7–8/8, więc tańsze audyty po prostu rzadziej znajdują rodzynki. Właściwa oszczędność to darmowa bramka peek przed audytem, nie uboższy audyt.
 
 Lighthouse mierzy z profilu mobilnego pod throttlingiem — LCP na desktopie będzie niższe niż zmierzone.
 

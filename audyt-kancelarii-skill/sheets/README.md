@@ -43,6 +43,18 @@ Bez tego URL serwuje starą wersję.
 | `setup()` | tworzy `Claude_import` z nagłówkami, generuje `SEKRET`. Bezpieczna do powtórzenia — istniejącej zakładki nie rusza |
 | `diagnose()` | wypisuje nagłówki obu zakładek i liczbę kluczy dedupu. Odpal, jeśli w arkuszu zmieniły się nazwy kolumn |
 
+## Endpointy webhooka
+
+| Wywołanie | Sekret | Do czego |
+|---|---|---|
+| `GET <URL>` | nie | ping — czy wdrożenie żyje i ile kolumn ma `Claude_import` |
+| `GET <URL>?akcja=klucze&sekret=…` | **tak** | klucze dedupu z `Trackera` + `Claude_import` — używa ich `scripts/dedup-gate.js`, żeby odsiać znane kancelarie **zanim** audyt spali budżet Firecrawl |
+| `POST <URL>` | **tak** | zapis rodzynków (patrz niżej) |
+
+Tryb `klucze` zwraca zbiorczą listę e-maili/telefonów/domen z arkusza, więc wymaga sekretu.
+Ten sam sekret autoryzuje zapis dowolnych wierszy przez POST — czyli uprawnienie ściśle
+większe — więc nie poszerza to granicy zaufania.
+
 ## Układ kolumn `Claude_import`
 
 Pierwsze **13** kolumn to kolumny **C..O Trackera**, w tej samej kolejności i pod tymi samymi

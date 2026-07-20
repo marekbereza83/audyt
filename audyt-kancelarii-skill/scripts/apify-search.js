@@ -10,12 +10,21 @@
  *   3. scrape.js --peek-batch (DARMOWE, Playwright)  → triage wizualny
  *   4. scrape.js --batch (DROGIE, budżet Firecrawl)  → pełny audyt
  *
- * Użycie:
- *   node apify-search.js --query "kancelaria adwokacka" --gdzie "Katowice" --max 100
- *       → sam KOSZTORYS, nic nie uruchamia ani nie płaci
+ * Strategia: WYCZERPUJEMY MIASTO, nie skimujemy wiele miast.
+ * Google Maps sortuje wyniki wg jakości profilu — zadbane kancelarie (opinie, aktualna strona)
+ * są na górze, zaniedbane siedzą głębiej. Płytki scrape wielu miast zbiera więc systematycznie
+ * najgorszy materiał pod ten produkt: same firmy, które nowej strony nie potrzebują.
+ * Dlatego jedno miasto × kilka fraz × wysoki limit, a potem `przeszukane.csv` mówi, czy wrócić.
  *
- *   node apify-search.js --query "..." --gdzie "..." --max 100 --tak
- *       → uruchamia aktora (PŁATNE) i zapisuje dataset
+ * Użycie:
+ *   node apify-search.js --miasto "Katowice" --max 200
+ *       → sam KOSZTORYS wyczerpania miasta (wszystkie frazy z FRAZY), nic nie płaci
+ *
+ *   node apify-search.js --miasto "Katowice" --max 200 --tak
+ *       → uruchamia aktora (PŁATNE), zapisuje dataset i wpis w przeszukane.csv
+ *
+ *   node apify-search.js --query "własna fraza" --gdzie "Katowice" --max 100 [--tak]
+ *       → pojedyncze zapytanie, gdy chcesz czegoś spoza standardowych fraz
  *
  *   node apify-search.js --dataset <datasetId>
  *       → pobiera GOTOWY dataset z konta, bez ponownego uruchamiania aktora (bez kosztu)
@@ -44,6 +53,23 @@ const USD_ZA_1000 = Number(process.env.APIFY_USD_ZA_1000 || 4);
 const OUT_BASE = process.env.AUDYT_OUTPUT_DIR || path.join(__dirname, '..', 'output');
 const OUT_APIFY = path.join(OUT_BASE, 'apify');
 
+/**
+ * Frazy do wyczerpania miasta. Celowo się zazębiają — Google zwraca dla każdej inny wycinek
+ * i dopiero suma daje pokrycie. Poprzedni scrape używał tylko dwóch pierwszych i przez to
+ * pomijał kancelarie, które opisują się jako „prawnik" albo „kancelaria prawna".
+ */
+const FRAZY = [
+  'kancelaria adwokacka',
+  'kancelaria radcy prawnego',
+  'adwokat',
+  'radca prawny',
+  'kancelaria prawna',
+];
+
+// Ślad pokrycia — WERSJONOWANY (nie w output/, bo output/ jest gitignorowany i nie jeździ
+// między komputerami). Odpowiada na pytanie „czy to miasto jest już wyczerpane".
+const PLIK_PRZESZUKANE = path.join(__dirname, 'przeszukane.csv');
+
 // ── Argumenty ────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
@@ -55,9 +81,16 @@ const ma = n => args.includes('--' + n);
 
 const query = flaga('query');
 const gdzie = flaga('gdzie');
+const miasto = flaga('miasto');
 const max = Number(flaga('max') || 100);
 const datasetId = flaga('dataset');
 const potwierdzone = ma('tak');
+
+/** Zapytania do wysłania: tryb --miasto rozwija wszystkie frazy, tryb --query bierze jedną. */
+function zapytania() {
+  if (miasto) return FRAZY.map(f => `${f} ${miasto}`);
+  return [gdzie ? `${query} ${gdzie}` : query];
+}
 
 function wymagajToken() {
   if (!TOKEN) {
@@ -122,26 +155,55 @@ function zapisz(items, slug) {
 
 /** Kosztorys — zawsze pokazywany przed uruchomieniem. */
 function kosztorys() {
-  const usd = (max / 1000) * USD_ZA_1000;
+  const q = zapytania();
+  // Limit działa NA ZAPYTANIE, więc sufit kosztu to iloczyn. Realnie wyjdzie mniej:
+  // frazy się zazębiają, a Google i tak rzadko oddaje pełne `max` na zapytanie.
+  const sufit = q.length * max;
+  const usd = (sufit / 1000) * USD_ZA_1000;
   console.log('\n── Kosztorys ─────────────────────────────');
   console.log(`  aktor:     ${AKTOR}`);
-  console.log(`  fraza:     "${query}"${gdzie ? ` — ${gdzie}` : ''}`);
-  console.log(`  max:       ${max} wyników`);
+  if (miasto) {
+    console.log(`  miasto:    ${miasto}  (tryb: wyczerpanie)`);
+    console.log(`  frazy:     ${q.length} — ${FRAZY.join(', ')}`);
+  } else {
+    console.log(`  fraza:     "${q[0]}"`);
+  }
+  console.log(`  max:       ${max} na zapytanie → sufit ${sufit} wyników`);
   console.log(`  stawka:    $${USD_ZA_1000} / 1000 wyników (orientacyjna)`);
-  console.log(`  szacunek:  ~$${usd.toFixed(2)}`);
+  console.log(`  szacunek:  do ~$${usd.toFixed(2)} (realnie mniej — frazy się zazębiają)`);
   console.log('──────────────────────────────────────────');
   return usd;
 }
 
+/** Dopisuje wpis do przeszukane.csv — ślad pokrycia, wersjonowany w repo. */
+function zapiszPrzeszukane({ miasto: m, frazy, dataset, wynikow, koszt }) {
+  const NAGLOWEK = 'miasto;frazy;data;dataset_id;wynikow;koszt_usd';
+  const esc = v => {
+    const s = String(v == null ? '' : v);
+    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const wiersz = [m, frazy.join(' | '), new Date().toISOString().slice(0, 10), dataset, wynikow, koszt]
+    .map(esc).join(';') + '\r\n';
+
+  if (!fs.existsSync(PLIK_PRZESZUKANE)) {
+    fs.writeFileSync(PLIK_PRZESZUKANE, '﻿' + NAGLOWEK + '\r\n' + wiersz, 'utf8');
+  } else {
+    fs.appendFileSync(PLIK_PRZESZUKANE, wiersz, 'utf8');
+  }
+  console.log(`  ślad pokrycia → scripts/${path.basename(PLIK_PRZESZUKANE)}`);
+}
+
 async function uruchom() {
+  const q = zapytania();
   const wejscie = {
-    searchStringsArray: [query],
+    searchStringsArray: q,
     maxCrawledPlacesPerSearch: max,
     language: 'pl',
     skipClosedPlaces: true,        // zamknięte i tak odpadają w dedup-gate — nie płaćmy za nie
     scrapePlaceDetailPage: false,  // nie potrzebujemy szczegółów, tylko www/telefon/nazwa
   };
-  if (gdzie) wejscie.locationQuery = gdzie;
+  // W trybie --miasto nazwa miasta siedzi już w każdej frazie; locationQuery tylko przy --gdzie.
+  if (!miasto && gdzie) wejscie.locationQuery = gdzie;
 
   console.log('\nUruchamiam aktora (PŁATNE)…');
   const run = await apify(`/acts/${AKTOR}/runs`, {
@@ -178,7 +240,18 @@ async function uruchom() {
   console.log(`✓ Zakończone. Realny koszt: ${koszt}`);
 
   const items = await apify(`/datasets/${stan.defaultDatasetId}/items?clean=true&format=json&limit=10000`);
-  const slug = (query || 'szukaj').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+  const slug = (miasto || query || 'szukaj').toLowerCase()
+    .replace(/[ąćęłńóśźż]/g, c => 'acelnoszz'['ąćęłńóśźż'.indexOf(c)])
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+
+  zapiszPrzeszukane({
+    miasto: miasto || gdzie || '(bez miasta)',
+    frazy: miasto ? FRAZY : [query],
+    dataset: stan.defaultDatasetId,
+    wynikow: items.length,
+    koszt: stan.usageTotalUsd != null ? Number(stan.usageTotalUsd).toFixed(3) : '',
+  });
+
   return zapisz(items, slug);
 }
 
@@ -189,12 +262,13 @@ async function uruchom() {
     if (ma('runy')) { wymagajToken(); return await pokazRuny(); }
     if (datasetId)  { wymagajToken(); return void await pobierzDataset(datasetId); }
 
-    if (!query) {
+    if (!query && !miasto) {
       console.error('Użycie:');
-      console.error('  node apify-search.js --query "kancelaria adwokacka" --gdzie "Katowice" --max 100        (kosztorys)');
-      console.error('  node apify-search.js --query "..." --gdzie "..." --max 100 --tak                        (uruchom, PŁATNE)');
-      console.error('  node apify-search.js --dataset <datasetId>                                              (pobierz gotowy, za darmo)');
-      console.error('  node apify-search.js --runy                                                             (ostatnie uruchomienia)');
+      console.error('  node apify-search.js --miasto "Katowice" --max 200            (kosztorys wyczerpania miasta)');
+      console.error('  node apify-search.js --miasto "Katowice" --max 200 --tak      (uruchom, PŁATNE)');
+      console.error('  node apify-search.js --query "fraza" --gdzie "Miasto" --max 100 [--tak]');
+      console.error('  node apify-search.js --dataset <datasetId>                    (pobierz gotowy, za darmo)');
+      console.error('  node apify-search.js --runy                                   (ostatnie uruchomienia)');
       process.exit(1);
     }
 

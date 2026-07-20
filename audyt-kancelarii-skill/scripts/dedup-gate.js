@@ -16,9 +16,14 @@
  *
  * Użycie:
  *   node dedup-gate.js <dataset.json|lista.csv> [--out <plik.csv>] [--offline]
+ *                      [--wykluczaj <lista.csv>]…
  *
- *   --offline  pomija odpytanie arkusza (punkt 4). Do pracy bez sieci — ale wtedy
- *              duplikaty względem Trackera wyjdą dopiero przy zapisie, już po koszcie.
+ *   --offline    pomija odpytanie arkusza (punkt 4). Do pracy bez sieci — ale wtedy
+ *                duplikaty względem Trackera wyjdą dopiero przy zapisie, już po koszcie.
+ *   --wykluczaj  dodatkowa lista już przerobionych (dowolny CSV z kolumną url). Można podać
+ *                wielokrotnie. Potrzebne, bo dziennik odrzuceń żyje w output/, który jest
+ *                gitignorowany i nie jeździ między komputerami — a lista wysłana kiedyś do
+ *                peeka (np. lista-apify-slaskie.csv) jest wersjonowana i pamięta, co już poszło.
  *
  * Wyjście:
  *   output/do-peek.csv          — rozszerzony CSV gotowy dla `scrape.js --peek-batch`
@@ -54,6 +59,10 @@ const outFlag = (() => {
   const i = args.indexOf('--out');
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null;
 })();
+const wykluczPliki = args.reduce((acc, a, i) => {
+  if (a === '--wykluczaj' && args[i + 1] && !args[i + 1].startsWith('--')) acc.push(args[i + 1]);
+  return acc;
+}, []);
 
 if (!plikWe) {
   console.error('Użycie: node dedup-gate.js <dataset.json|lista.csv> [--out <plik.csv>] [--offline]');
@@ -122,6 +131,25 @@ function juzOdrzucone() {
   return zbior;
 }
 
+/** Znormalizowane domeny z list „już przerobione" podanych przez --wykluczaj. */
+function wykluczoneZPlikow(pliki) {
+  const zbior = new Set();
+  for (const p of pliki) {
+    if (!fs.existsSync(p)) {
+      console.error(`⚠ --wykluczaj: nie ma pliku ${p} — pomijam`);
+      continue;
+    }
+    const { leads } = parseLeadsCsv(fs.readFileSync(p, 'utf8'));
+    let n = 0;
+    for (const l of leads) {
+      const d = normDomena(ensureScheme(l.url || ''));
+      if (d) { zbior.add(d); n++; }
+    }
+    console.log(`Wykluczam z ${path.basename(p)}: ${n} domen`);
+  }
+  return zbior;
+}
+
 // ── Bramka ───────────────────────────────────────────────────────────
 
 (async () => {
@@ -139,6 +167,7 @@ function juzOdrzucone() {
 
   const zaudytowane = juzZaudytowane();
   const odrzucone = juzOdrzucone();
+  const wykluczone = wykluczoneZPlikow(wykluczPliki);
   if (zaudytowane.size) console.log(`Lokalnie zaudytowanych: ${zaudytowane.size}`);
   if (odrzucone.size) console.log(`Wcześniej odrzuconych:   ${odrzucone.size}`);
 
@@ -173,6 +202,7 @@ function juzOdrzucone() {
     const dNorm = normDomena(url);
     if (dNorm && zaudytowane.has(dNorm)) { odrzuc('już zaudytowana lokalnie'); continue; }
     if (dNorm && odrzucone.has(dNorm)) { odrzuc(`odrzucona wcześniej (${odrzucone.get(dNorm)}/8)`); continue; }
+    if (dNorm && wykluczone.has(dNorm)) { odrzuc('już przerobiona (lista wykluczeń)'); continue; }
 
     if (kDomena) widzianeDomeny.add(kDomena);
     if (kTel) widzianeTelefony.add(kTel);

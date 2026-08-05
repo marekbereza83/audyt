@@ -57,6 +57,12 @@ const OUT_APIFY = path.join(OUT_BASE, 'apify');
  * Frazy do wyczerpania miasta. Celowo się zazębiają — Google zwraca dla każdej inny wycinek
  * i dopiero suma daje pokrycie. Poprzedni scrape używał tylko dwóch pierwszych i przez to
  * pomijał kancelarie, które opisują się jako „prawnik" albo „kancelaria prawna".
+ *
+ * 2026-08-04: pierwszy przebieg na Katowicach (5 fraz oznaczonych ↓) nadal pomijał firmy
+ * opisujące się jako „prawnik" (mimo komentarza wyżej — fraza nigdy faktycznie nie trafiła
+ * do listy) oraz te używające ogólnych fraz usługowych („usługi prawne", „obsługa prawna",
+ * „porady prawne"). Dopisane niżej — do zweryfikowania w drugim przebiegu, czy realnie
+ * dorzucają nowe domeny, czy tylko zwiększają nakładanie się wyników.
  */
 const FRAZY = [
   'kancelaria adwokacka',
@@ -64,6 +70,10 @@ const FRAZY = [
   'adwokat',
   'radca prawny',
   'kancelaria prawna',
+  'prawnik',
+  'usługi prawne',
+  'obsługa prawna',
+  'porady prawne',
 ];
 
 // Ślad pokrycia — WERSJONOWANY (nie w output/, bo output/ jest gitignorowany i nie jeździ

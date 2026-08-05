@@ -108,13 +108,47 @@ Skąd brać dane do każdego wymiaru:
 | Wymiar | Główne źródło | Uwaga |
 |---|---|---|
 | A | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ A2, `sredni` ≈ A1, `niski` ≈ A0. To punkt wyjścia, nie automat |
-| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` |
+| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` — **z wyjątkiem klauzuli braku dowodu, patrz niżej** |
 | C | różnica między tym, czym kancelaria jest (B), a tym, co pokazuje strona (A) | „łatwa do pokazania" = dasz się to opisać w jednym zdaniu maila |
 | D | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1 |
 
 **A i C są skorelowane** (duża potrzeba ≈ duża poprawa) — to normalne i zamierzone. Praktyczny
 skutek: 7 pkt oznacza w praktyce A2 + C2 + B2 + D≥1, czyli **rozbudowaną kancelarię ze słabą
 stroną**. Spodziewaj się kilku procent trafień na paczkę.
+
+**Skala 0–8 nie ma czterech niezależnych wymiarów — ma trzy.** A i C mierzą w praktyce tę samą
+obserwację (stan strony wobec stanu kancelarii) i dają razem do 4 z 8 punktów, więc pozorna
+granularność skali jest wyższa niż realna. Niezależne osie to: **potrzeba (A+C) · pieniądze (B) ·
+hak (D)**. Pamiętaj o tym, czytając sumę — 6/8 zbudowane z A2+C2+B1+D1 to zupełnie inny przypadek
+niż 6/8 z A1+C1+B2+D2, mimo identycznej liczby.
+
+---
+
+### Klauzula braku dowodu (B przy nieobecnej lub zepsutej stronie)
+
+**Problem, który ta klauzula naprawia:** B czerpie dowody ze strony internetowej (`teamPage`,
+`servicesPage`), czyli z tego samego artefaktu, który oceniamy. Im gorsza strona, tym mniej
+dowodów na B — a ponieważ w praktyce **B jest bramką całej kwalifikacji** (bez B2 prawie nic nie
+dobija do 7), system systematycznie odrzucał najlepszych kandydatów: firmy, których strona jest
+tak słaba, że ukrywa ich realną wielkość. Zweryfikowane empirycznie na paczkach Katowice+Gliwice:
+spośród leadów z A2 tylko te, u których dowód na B **przetrwał poza stroną**, dobiły do B2.
+
+**Reguła:** jeśli `priorytet_wizualny` = `wysoki` **z powodu braku strony, jej awarii albo
+skrajnego ubóstwa treści** (brak `teamPage` i `servicesPage` nie dlatego, że kancelaria jest mała,
+tylko dlatego, że nie ma czego czytać) — oceniaj B **wyłącznie z dowodów pozastronowych**.
+Standardowy zakaz „nie podbijaj B samym Google Maps" **nie obowiązuje**, bo nie istnieje
+alternatywne źródło, którego miałby wymagać.
+
+Dowody pozastronowe dopuszczalne w tym trybie:
+- `google_maps.reviewsCount` + `totalScore` — wysoka liczba opinii przy dobrej ocenie to realny,
+  długo budowany strumień klientów
+- **płatna akwizycja klientów** (patrz „Mocne sygnały" niżej)
+- weryfikacja rejestrowa (GUS, „Sprawdzona Firma" i podobne znaki na portalach)
+- staż działalności podany w profilu zewnętrznym
+- liczba lokalizacji wynikająca z wizytówek Google, nie ze strony
+
+W `uzasadnienie` wymiaru B **zawsze napisz wprost, że zastosowano klauzulę braku dowodu** i z czego
+konkretnie oceniłeś B — żeby przy audycie decyzji było widać, że to nie było podbicie na siłę.
 
 ### Werdykt
 
@@ -123,6 +157,15 @@ stroną**. Spodziewaj się kilku procent trafień na paczkę.
 | **7–8** | `PISAĆ` | rodzynek → zapis do `Claude_import` |
 | 5–6 | — | **nie zapisujemy do arkusza**; loguj lokalnie w `output/odrzucone.csv`, żeby nie audytować drugi raz |
 | 0–4 | `ODPUŚCIĆ` | tylko log lokalny |
+
+**Próg 7 zostaje twardy — nie ma ścieżki omijającej B.** Rozważana była reguła „6 punktów przy
+A2+C2 kwalifikuje mimo B1", ale została odrzucona świadomie: po zastosowaniu klauzuli braku dowodu
+B1 oznacza już „sprawdziliśmy wszystkie dostępne źródła i to jest realnie mała kancelaria" — a to
+jest dokładnie ten przypadek, który wymiar B ma odsiewać przy produkcie za 4 500–6 500 zł.
+Właściwą naprawą zaniżonego B jest klauzula braku dowodu (uzupełnia brakujące dane), nie obniżenie
+progu (ignoruje dane prawdziwe). Próg 7–8 jest też zakodowany w `validate-lead.js`,
+`push-import.js` i `sheets/Code.gs` — zmiana wymagałaby ręcznego przewdrożenia webhooka Apps
+Script.
 
 Format zapisu pod werdyktem — zawsze z rozbiciem, bo z niego widać, czy 7 nie powstało z natęgi:
 
@@ -142,6 +185,14 @@ profesjonalne zdjęcia lub identyfikacja zmarnowane przez słaby projekt · niec
 zespołu lub specjalizacji · kancelaria obsługuje firmy / ma zespół / kilka lokalizacji, ale strona
 tego nie komunikuje.
 
+**Płatna akwizycja klientów — mocny sygnał B.** Obecność w płatnym katalogu/marketplace leadów
+(Oferteo, Fixly, płatne wizytówki branżowe), widoczne reklamy Google Ads, opłacone pozycjonowanie.
+To **bezpośredni dowód, że kancelaria wydaje pieniądze na pozyskiwanie klientów** — mocniejszy
+predyktor budżetu na stronę niż wielkość zespołu, bo dotyczy wprost gotowości do płacenia za
+akwizycję, a nie tylko skali działalności. Szczególnie ważne przy klauzuli braku dowodu: firma bez
+własnej strony, która płaci za leady w katalogu, ma **potwierdzony budżet marketingowy i brak
+produktu, na który mogłaby go kierować**.
+
 ### Słabe sygnały — NIE wystarczają (to jest `co_jest_kosmetyka`)
 
 Stary copyright · przeciętne ikony · sam wiek strony · jeden kolor lub zdjęcie stockowe · dużo
@@ -157,6 +208,20 @@ nie zostaje nic — to nie jest lead.
 Strona niedostępna albo widziałeś tylko fragment → **nie oznaczaj jako PISAĆ**. W raporcie:
 `OCENA WSTĘPNA — ZA MAŁO DANYCH`. Nie uzupełniaj pól przypuszczeniami i nie wymyślaj danych
 kontaktowych — puste pole jest lepsze niż zgadnięte.
+
+**Nie myl „braku danych" z „klauzulą braku dowodu" (wyżej)** — to dwie różne sytuacje:
+
+| | Co się stało | Werdykt |
+|---|---|---|
+| **Brak danych** | *nie wiemy, co tam jest* — scrape padł, timeout, błąd certyfikatu, zawieszone konto hostingu, widzieliśmy tylko fragment | `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie oceniaj, nie zapisuj nigdzie |
+| **Klauzula braku dowodu** | *wiemy, i to jest właśnie ustalenie* — potwierdziliśmy, że kancelaria nie ma własnej strony (jest tylko profil w katalogu), strona działa, ale jest skrajnie uboga, albo działa z trwale zepsutymi podstronami | normalna kwalifikacja, B z dowodów pozastronowych |
+
+Test rozstrzygający: **czy potrafisz napisać zdanie o tym, co odwiedzający realnie zobaczy?**
+Jeśli tak („trafia na profil w Oferteo zamiast na stronę kancelarii") — to ustalenie, oceniaj
+normalnie. Jeśli nie („nie wiadomo, czy strona istnieje — hosting zawieszony") — to brak danych.
+
+Przy stanach tymczasowych z natury (zawieszone konto, wygasły certyfikat, awaria serwera) domyślnie
+wybieraj **brak danych** i wróć później — mogą zniknąć same.
 
 ### Zasada końcowa
 

@@ -553,6 +553,23 @@ async function scrollThroughPage(page) {
   }).catch(() => {});
 }
 
+// Nawigacja przed zrzutem. `waitUntil: 'networkidle'` jako jedyny warunek jest zbyt surowy:
+// czeka na 500 ms ciszy sieciowej, której strony z analityką, czatem czy pollingiem nigdy nie
+// osiągają — i po 30 s leci timeout, mimo że strona dawno się wyrenderowała. Kosztowało to
+// 6 z 23 kancelarii w pierwszej paczce Katowic (26%); wszystkie sześć odpowiadały HTTP 200
+// w 0,6–4,8 s, więc odpadły z powodu czysto technicznego, nie merytorycznego.
+//
+// Dlatego dwustopniowo: twardym warunkiem jest `domcontentloaded` (praktycznie zawsze się
+// spełnia), a cisza sieciowa to już tylko bonus z własnym, krótkim budżetem. Strony, które
+// się wyciszają, zachowują się dokładnie jak dotąd — reszta zamiast błędu dostaje zrzut.
+// Lazy-loadowane obrazy dociąga i tak scrollThroughPage() (500 ms na krok).
+const SETTLE_MS = Number(process.env.PLAYWRIGHT_SETTLE_MS || 10000);
+
+async function gotoStrona(page, targetUrl, timeout = 30000) {
+  await page.goto(targetUrl, { waitUntil: 'domcontentloaded', timeout });
+  await page.waitForLoadState('networkidle', { timeout: SETTLE_MS }).catch(() => {});
+}
+
 // ── Playwright + Lighthouse: wydajność + screenshoty ────────────────
 // outDir — katalog docelowy na screenshoty audytowanej strony.
 // withScreenshots: false dla konkurenta (nie potrzebujemy jego zrzutów, a to skraca czas).
@@ -567,7 +584,7 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
     const ctxD = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const pageD = await ctxD.newPage();
     try {
-      await pageD.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+      await gotoStrona(pageD, targetUrl);
       await scrollThroughPage(pageD);
       await pageD.screenshot({ path: path.join(outDir, 'screenshot-desktop.png'), fullPage: true });
     } catch (e) { vitals.desktopError = e.message; }
@@ -581,7 +598,7 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
   });
   const pageM = await ctxM.newPage();
   try {
-    await pageM.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await gotoStrona(pageM, targetUrl);
     if (withScreenshots) {
       await scrollThroughPage(pageM);
       await pageM.screenshot({ path: path.join(outDir, 'screenshot-mobile.png'), fullPage: true });
@@ -666,7 +683,7 @@ async function peekScreenshot(targetUrl) {
   try {
     const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await ctx.newPage();
-    await page.goto(targetUrl, { waitUntil: 'networkidle', timeout: 30000 });
+    await gotoStrona(page, targetUrl);
     await scrollThroughPage(page);
     await page.screenshot({ path: shot, fullPage: true });
     await ctx.close();

@@ -10,7 +10,7 @@
 
 **Pytanie przewodnie:** Czy właściciel, patrząc na własną stronę, może poczuć, że przestała reprezentować jego kancelarię?
 
-Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot-mobile.png`) — nie z danych scrapera. Wynik zapisz w `audyt-dane.json` jako pole `ocenaWizualna` i w trackerze jako `priorytet_wizualny`.
+Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot-mobile.png` — **oraz kafelki `-2`, `-3`, jeśli są w katalogu; otwórz wszystkie**, bo długie strony są cięte i pierwszy plik pokazuje tylko początek) — nie z danych scrapera. Wynik zapisz w `audyt-dane.json` jako pole `ocenaWizualna` i w trackerze jako `priorytet_wizualny`.
 
 **Czego tu NIE oceniasz:** LCP, HTTPS, CTA, SEO, H1, JSON-LD, Core Web Vitals — to już jest w score (8 wymiarów niżej). Ocena wizualna = wyłącznie to, co widać na screenshocie oczami klienta.
 
@@ -90,7 +90,7 @@ Nie szukamy dowolnych błędów. Strona nie dostaje wysokiej oceny za to, że wy
 ### Kolejność pracy
 
 Oceniaj z danych scrapera i zrzutów, nie z pamięci — kolejno:
-`screenshot-desktop.png` + `screenshot-mobile.png` → `content.json` (hero, kontakt, `ageSignals`)
+`screenshot-desktop.png` + `screenshot-mobile.png` (+ kafelki `-2`, `-3`) → `content.json` (hero, kontakt, `ageSignals`)
 → `servicesPage` → `teamPage` → `newsPage` → `vitals.json`. Fakty oddzielaj od przypuszczeń:
 pole puste w danych to „nie wiem", nie „nie ma".
 
@@ -293,7 +293,7 @@ Sprawdź: `vitals.json` → `lcp`, `performanceScore`. Jeśli brak pomiaru — o
 | ⚠️ 5 | Działa, ale z problemami (drobny tekst, trudny kontakt) |
 | ❌ 0 | Nieresponsywna lub poważne błędy układu |
 
-Sprawdź: `screenshot-mobile.png` + `vitals.json` → `mobileFriendly`.
+Sprawdź: `screenshot-mobile.png` (+ `screenshot-mobile-2.png`) + `vitals.json` → `mobileFriendly`.
 
 ---
 

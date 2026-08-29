@@ -22,7 +22,10 @@
  *                           + contactPage: dociągnięta podstrona „Kontakt" (email/telefony do trackera — email często jest tylko tam)
  *                           + ageSignals: ślady wieku/zaniedbania (copyright, generator, stary szablon) dla oceny leada
  *   vitals.json           — Core Web Vitals + performance score + https + mobile
- *   screenshot-desktop.png, screenshot-mobile.png
+ *   screenshot-desktop.png, screenshot-mobile.png — plus KAFELKI `-2`, `-3` na długich
+ *                           stronach (screenshot-desktop-2.png itd.). Długa strona w jednym
+ *                           pliku jest dla modelu nieczytelna po przeskalowaniu — patrz
+ *                           zrzucKafelki(). Oglądając stronę, otwórz WSZYSTKIE kafelki.
  *   lead-info.json        — (tryb batch) dane wejściowe leada: identyfikacja, status operacyjny,
  *                           kontekst Google Maps, blokada kontaktu (mail_zablokowany + powód)
  *   competitor.json       — (tylko gdy podano url-konkurenta) { url, content, vitals } konkurenta
@@ -72,14 +75,78 @@ function outDirFor(u) {
   return d;
 }
 
-// Muteks na Lighthouse: używa on globalnych performance.mark, więc dwa równoległe pomiary
-// w tym samym procesie (batch) kolidują. Serializujemy TYLKO Lighthouse —
-// Firecrawl i Playwright dalej idą równolegle (to one dają zysk z batcha).
-let lighthouseLock = Promise.resolve();
-function withLighthouseLock(fn) {
-  const run = lighthouseLock.then(fn, fn);
-  lighthouseLock = run.then(() => {}, () => {}); // następny czeka, ale błąd nie blokuje kolejki
-  return run;
+// ── Lighthouse: proces potomny zamiast muteksu ──────────────────────
+// Wcześniej pomiary szły przez muteks serializujący CAŁY batch, bo Lighthouse używa
+// globalnych `performance.mark` i dwa pomiary w tym samym procesie kolidują. Kolizja
+// dotyczy jednak wyłącznie WSPÓLNEGO procesu — uruchomienie każdego pomiaru w procesie
+// potomnym (lighthouse-worker.js) znosi powód muteksu.
+//
+// To była realna główna blokada paczki, nie limit Firecrawl: zmierzone 35,9 s na firmę
+// × 16 firm zserializowanych = 9,6 min, czyli mniej więcej tyle, ile trwał cały scrape.
+//
+// Zamiast muteksu — semafor: pomiary idą równolegle, ale nie bez końca, bo każdy startuje
+// własnego Chrome'a. Naturalnym ogranicznikiem jest i tak ROWNOLEGLE (2 audyty naraz);
+// osobny limit chroni, gdyby ktoś podniósł FIRECRAWL_ROWNOLEGLE na płatnym planie.
+const LIGHTHOUSE_ROWNOLEGLE = Number(process.env.LIGHTHOUSE_ROWNOLEGLE || 4);
+const LIGHTHOUSE_TIMEOUT_MS = Number(process.env.LIGHTHOUSE_TIMEOUT_MS || 120000);
+
+let lhZajete = 0;
+const lhKolejka = [];
+function zwolnijSlot() {
+  lhZajete--;
+  const next = lhKolejka.shift();
+  if (next) { lhZajete++; next(); }
+}
+function zajmijSlot() {
+  if (lhZajete < LIGHTHOUSE_ROWNOLEGLE) { lhZajete++; return Promise.resolve(); }
+  return new Promise((resolve) => lhKolejka.push(resolve));
+}
+
+// Jeden pomiar w procesie potomnym. Nigdy nie rzuca — zwraca { ok:false, error } —
+// bo brak pomiaru szybkości nie może przekreślić całego audytu treści.
+function pomiarLighthouse(targetUrl) {
+  const { fork } = require('child_process');
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = fork(path.join(__dirname, 'lighthouse-worker.js'), [targetUrl], {
+        // Wynik wraca przez IPC; stdout/stderr dziecka wyrzucamy, żeby log paczki
+        // został czytelny (Lighthouse potrafi być bardzo gadatliwy).
+        stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
+      });
+    } catch (e) {
+      return resolve({ ok: false, error: 'nie udało się uruchomić workera: ' + e.message });
+    }
+
+    let gotowe = false;
+    const zakoncz = (wynik) => {
+      if (gotowe) return;
+      gotowe = true;
+      clearTimeout(timer);
+      try { child.kill(); } catch (_) { /* mógł już wyjść */ }
+      resolve(wynik);
+    };
+
+    // Zawieszona strona nie może zablokować paczki w nieskończoność.
+    const timer = setTimeout(
+      () => zakoncz({ ok: false, error: `przekroczono limit ${LIGHTHOUSE_TIMEOUT_MS / 1000}s` }),
+      LIGHTHOUSE_TIMEOUT_MS
+    );
+
+    child.on('message', zakoncz);
+    child.on('error', (e) => zakoncz({ ok: false, error: e.message }));
+    // Wyjście bez wiadomości = worker padł; przy poprawnym przebiegu 'message' był wcześniej.
+    child.on('exit', (code) => zakoncz({ ok: false, error: `worker zakończył się bez wyniku (kod ${code})` }));
+  });
+}
+
+async function zmierzLighthouse(targetUrl) {
+  await zajmijSlot();
+  try {
+    return await pomiarLighthouse(targetUrl);
+  } finally {
+    zwolnijSlot();
+  }
 }
 
 // ── Podstrona „Zakres usług / Oferta" ───────────────────────────────
@@ -553,6 +620,78 @@ async function scrollThroughPage(page) {
   }).catch(() => {});
 }
 
+// ── Kafelkowanie zrzutów ────────────────────────────────────────────
+// `fullPage: true` na długiej stronie produkuje obraz, którego Claude NIE JEST W STANIE
+// przeczytać. Model skaluje obraz do 1568 px na dłuższym boku, więc pas 1920×11111
+// schodzi do 271 px szerokości, a mobile 375×20179 do ~29 px. Zmierzone na paczce
+// Katowice+Gliwice: 6 z 14 zrzutów desktop poniżej 550 px, WSZYSTKIE mobile długich
+// stron w przedziale 29–48 px. Dokładnie te obserwacje, na których stoi Krok 0 (nagłówki,
+// rok w stopce, puste sekcje pod nazwanym nagłówkiem) stawały się zgadywanką — stąd
+// rewizje werdyktów wizualnych między peekiem a pełnym audytem.
+//
+// Dlatego tniemy stronę na kafelki, dobierając wysokość DO SZEROKOŚCI strony — stała
+// wysokość nie wystarcza, bo o czytelności decyduje proporcja: przy 1920 px kafelek
+// 4000 px daje czytelne 753 px, ale przy mobilnych 375 px ten sam kafelek daje 147 px.
+// Wysokość liczymy więc tak, żeby po skalowaniu zostało co najmniej ZRZUT_MIN_SZER px
+// (a dla wąskich viewportów — żeby skalowania nie było w ogóle).
+//
+// Nazwa pierwszego kafelka jest BEZ sufiksu (`screenshot-desktop.png`), więc wszystko, co
+// odwołuje się do dotychczasowej nazwy, dalej działa — z tą różnicą, że plik zawiera teraz
+// czytelny początek strony zamiast ściśniętej całości.
+//
+// Gdy strona jest tak długa, że kafelków byłoby więcej niż `maxKafelkow`, bierzemy początek
+// (pierwsze wrażenie) ORAZ ostatni kafelek (stopka — rok w copyright, kredyt agencji to
+// udokumentowane markery Kroku 0). Traci się wtedy sam środek skrajnie długiej strony.
+const ZRZUT_MAX_H = Number(process.env.SCREENSHOT_MAX_H || 4000);
+// Model skaluje obraz do 1568 px na dłuższym boku; poniżej tej wysokości nie ma skalowania.
+const LIMIT_MODELU = 1568;
+// Docelowa minimalna szerokość PO skalowaniu — poniżej tego tekst przestaje być czytelny.
+const ZRZUT_MIN_SZER = Number(process.env.SCREENSHOT_MIN_W || 600);
+
+// Największa wysokość kafelka, przy której po skalowaniu zostanie ≥ ZRZUT_MIN_SZER px.
+// Dla wąskich viewportów (mobile 375 px) żadna wysokość tego nie zapewni, więc schodzimy
+// do LIMIT_MODELU — wtedy skalowania nie ma wcale i zrzut jest ostry 1:1.
+function wysokoscKafelka(szerokosc) {
+  const zProporcji = (szerokosc * LIMIT_MODELU) / ZRZUT_MIN_SZER;
+  return Math.round(Math.min(ZRZUT_MAX_H, Math.max(LIMIT_MODELU, zProporcji)));
+}
+
+async function zrzucKafelki(page, outDir, prefix, { maxKafelkow = 3 } = {}) {
+  const wymiary = await page.evaluate(() => ({
+    h: Math.max(document.body?.scrollHeight || 0, document.documentElement?.scrollHeight || 0),
+    // Szerokość z dokumentu, nie z viewportu: strony bez wersji mobilnej wymuszają
+    // layout szerszy niż okno (np. 1060 px przy viewporcie 375 px).
+    w: Math.max(document.body?.scrollWidth || 0, document.documentElement?.scrollWidth || 0),
+  })).catch(() => ({ h: 0, w: 0 }));
+
+  const szerokosc = Math.max(wymiary.w || 0, page.viewportSize()?.width || 0) || 1920;
+  const maxH = wysokoscKafelka(szerokosc);
+  const sciezka = (n) => path.join(outDir, n === 1 ? `${prefix}.png` : `${prefix}-${n}.png`);
+
+  // Krótka strona — dokładnie dotychczasowe zachowanie, jeden plik, zero ryzyka.
+  if (!wymiary.h || wymiary.h <= maxH) {
+    await page.screenshot({ path: sciezka(1), fullPage: true });
+    return { kafelki: 1, wysokosc: wymiary.h, przyciete: false };
+  }
+
+  const ilePelnych = Math.ceil(wymiary.h / maxH);
+  const przyciete = ilePelnych > maxKafelkow;
+  const offsety = przyciete
+    // początek strony (pierwsze wrażenie) + ostatni kafelek jako stopka
+    ? [...Array.from({ length: maxKafelkow - 1 }, (_, i) => i * maxH), wymiary.h - maxH]
+    : Array.from({ length: ilePelnych }, (_, i) => i * maxH);
+
+  for (let i = 0; i < offsety.length; i++) {
+    const y = offsety[i];
+    await page.screenshot({
+      path: sciezka(i + 1),
+      fullPage: true,
+      clip: { x: 0, y, width: szerokosc, height: Math.min(maxH, wymiary.h - y) },
+    });
+  }
+  return { kafelki: offsety.length, wysokosc: wymiary.h, wysokoscKafelka: maxH, przyciete };
+}
+
 // Nawigacja przed zrzutem. `waitUntil: 'networkidle'` jako jedyny warunek jest zbyt surowy:
 // czeka na 500 ms ciszy sieciowej, której strony z analityką, czatem czy pollingiem nigdy nie
 // osiągają — i po 30 s leci timeout, mimo że strona dawno się wyrenderowała. Kosztowało to
@@ -586,7 +725,7 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
     try {
       await gotoStrona(pageD, targetUrl);
       await scrollThroughPage(pageD);
-      await pageD.screenshot({ path: path.join(outDir, 'screenshot-desktop.png'), fullPage: true });
+      vitals.zrzutDesktop = await zrzucKafelki(pageD, outDir, 'screenshot-desktop', { maxKafelkow: 3 });
     } catch (e) { vitals.desktopError = e.message; }
     await ctxD.close();
   }
@@ -601,7 +740,9 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
     await gotoStrona(pageM, targetUrl);
     if (withScreenshots) {
       await scrollThroughPage(pageM);
-      await pageM.screenshot({ path: path.join(outDir, 'screenshot-mobile.png'), fullPage: true });
+      // Mobile służy głównie do sprawdzenia, czy układ się nie rozjeżdża — wystarczy
+      // początek strony i stopka, stąd 2 kafelki zamiast 3.
+      vitals.zrzutMobile = await zrzucKafelki(pageM, outDir, 'screenshot-mobile', { maxKafelkow: 2 });
     }
     const hasViewport = await pageM.$('meta[name="viewport"]');
     vitals.mobileFriendly = !!hasViewport;
@@ -613,29 +754,18 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
 
   await browser.close();
 
-  // Lighthouse (opcjonalny — może nie być dostępny). Serializowany muteksem (patrz withLighthouseLock).
-  await withLighthouseLock(async () => {
-    try {
-      const lighthouse = require('lighthouse').default || require('lighthouse');
-      const chromeLauncher = require('chrome-launcher');
-      const chrome = await chromeLauncher.launch({ chromeFlags: ['--headless'] });
-      const runnerResult = await lighthouse(targetUrl, {
-        port: chrome.port, onlyCategories: ['performance'], formFactor: 'mobile',
-      });
-      const lhr = runnerResult.lhr;
-      vitals.performanceScore = Math.round(lhr.categories.performance.score * 100);
-      vitals.lcp = lhr.audits['largest-contentful-paint']?.numericValue / 1000;
-      vitals.cls = lhr.audits['cumulative-layout-shift']?.numericValue;
-      vitals.tbt = lhr.audits['total-blocking-time']?.numericValue;
-      // chrome-launcher na Windows bywa, że nie usunie swojego temp-profilu (EPERM) — sprzątanie
-      // nie może zabić pomiaru, bo dane są już zebrane powyżej. kill() bywa void (nie-Promise),
-      // więc owijamy w try/catch, nie w .catch().
-      try { await chrome.kill(); } catch (_) { /* cleanup temp-profilu — ignorujemy */ }
-    } catch (e) {
-      vitals.lighthouseAvailable = false;
-      vitals.lighthouseError = 'Lighthouse niedostępny — pomiar szybkości pominięty: ' + e.message;
-    }
-  });
+  // Lighthouse (opcjonalny — może nie być dostępny). Proces potomny, semafor zamiast
+  // muteksu — patrz komentarz przy zmierzLighthouse().
+  const lh = await zmierzLighthouse(targetUrl);
+  if (lh.ok) {
+    vitals.performanceScore = lh.performanceScore;
+    vitals.lcp = lh.lcp;
+    vitals.cls = lh.cls;
+    vitals.tbt = lh.tbt;
+  } else {
+    vitals.lighthouseAvailable = false;
+    vitals.lighthouseError = 'Lighthouse niedostępny — pomiar szybkości pominięty: ' + lh.error;
+  }
 
   return vitals;
 }
@@ -685,7 +815,9 @@ async function peekScreenshot(targetUrl) {
     const page = await ctx.newPage();
     await gotoStrona(page, targetUrl);
     await scrollThroughPage(page);
-    await page.screenshot({ path: shot, fullPage: true });
+    // Triage czyta te zrzuty hurtowo (dziesiątki firm naraz), więc trzymamy 2 kafelki:
+    // pierwsze wrażenie + stopka. To wystarcza na werdykt Kroku 0, a nie mnoży obrazów.
+    await zrzucKafelki(page, outDir, 'screenshot-peek', { maxKafelkow: 2 });
     await ctx.close();
   } finally {
     await browser.close();

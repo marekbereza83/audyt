@@ -36,7 +36,7 @@ Jeśli audyt ma być publiczny (blog/LinkedIn), **anonimizuj** — „kancelaria
 Uruchom `scripts/scrape.js <url>`. Zwraca on do `output/<domena>/`:
 - `content.json` — markdown, nagłówki (H1/H2/H3), meta title/description, linki, formularze, dane kontaktowe wykryte w treści.
 - `vitals.json` — Core Web Vitals z Playwright/Lighthouse: LCP, CLS, TBT, performance score, mobile-friendly, HTTPS.
-- `screenshot-desktop.png` i `screenshot-mobile.png` — pełne zrzuty (1920 i 375 px).
+- `screenshot-desktop.png` i `screenshot-mobile.png` — zrzuty (1920 i 375 px). **Długie strony są cięte na kafelki:** `screenshot-desktop-2.png`, `-3.png` itd. Zawsze sprawdź, ile plików `screenshot-*` leży w katalogu, i **otwórz wszystkie** — pierwszy plik to sam początek strony, ostatni przy bardzo długich stronach to stopka. Powód: pojedynczy zrzut całej długiej strony jest po przeskalowaniu nieczytelny (pas 1920×11111 schodzi do 271 px szerokości), więc markery Kroku 0 stają się zgadywanką.
 
 Jeśli `scrape.js` zawiedzie na Lighthouse (brak Chrome), kontynuuj z samym Firecrawl i odnotuj w raporcie „pomiar szybkości niedostępny".
 
@@ -44,7 +44,7 @@ Jeśli `scrape.js` zawiedzie na Lighthouse (brak Chrome), kontynuuj z samym Fire
 
 ### Krok 2 — Oceń wizualnie, potem zmierz według systemu FORMA
 
-**Najpierw ocena wizualna — to podstawa całego audytu.** Otwórz `screenshot-desktop.png` i `screenshot-mobile.png` i przejdź przez „Krok 0 — Ocena wizualna" z `reference/kryteria-audytu.md`: 5 wymiarów (aktualność designu, pierwsze wrażenie, spójność marki, wiarygodność, świeżość treści), każdy ✅/🟡/🔴. Wynik: `priorytet_wizualny` (wysoki/średni/niski/do sprawdzenia) wyliczony z reguły w kryteriach **+ lista markerów, które o nim zadecydowały**. Pytanie przewodnie: czy właściciel, patrząc na własną stronę, może poczuć, że przestała reprezentować jego kancelarię? Werdykt wizualny otworzy raport i da obserwację do maila.
+**Najpierw ocena wizualna — to podstawa całego audytu.** Otwórz `screenshot-desktop.png` i `screenshot-mobile.png` (**wraz z kafelkami `-2`, `-3`, jeśli istnieją** — patrz Krok 1) i przejdź przez „Krok 0 — Ocena wizualna" z `reference/kryteria-audytu.md`: 5 wymiarów (aktualność designu, pierwsze wrażenie, spójność marki, wiarygodność, świeżość treści), każdy ✅/🟡/🔴. Wynik: `priorytet_wizualny` (wysoki/średni/niski/do sprawdzenia) wyliczony z reguły w kryteriach **+ lista markerów, które o nim zadecydowały**. Pytanie przewodnie: czy właściciel, patrząc na własną stronę, może poczuć, że przestała reprezentować jego kancelarię? Werdykt wizualny otworzy raport i da obserwację do maila.
 
 Potem przejdź przez **8 wymiarów oceny** z tego samego pliku. Dla każdego wymiaru przypisz status (✅ dobrze / ⚠️ do poprawy / ❌ brak) na podstawie danych z Kroku 1. Nie oceniaj z pamięci — opieraj każdą ocenę na konkretnym polu z `content.json` lub `vitals.json`, albo na tym co widać na screenshocie. Wymiary nie zastępują oceny wizualnej — dostarczają mierzalnego uzasadnienia i materiału na rozmowę po odpowiedzi na maila.
 

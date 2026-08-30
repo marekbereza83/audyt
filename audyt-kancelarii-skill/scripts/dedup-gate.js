@@ -13,6 +13,12 @@
  *   4. duplikat względem arkusza — „Tracker" + „Claude_import" (klucze z webhooka)
  *   5. kancelaria już zaudytowana lokalnie (istnieje output/<domena>/audyt-dane.json)
  *   6. kancelaria już odrzucona wcześniej (output/odrzucone.csv)
+ *   7. podmiot, który nie jest kancelarią (kategorie Google Maps bez markera prawniczego)
+ *
+ * Przed sprawdzeniem duplikatów rozwija przekierowania (HEAD/GET, bez Firecrawl, za darmo)
+ * i dedupuje po adresie DOCELOWYM. Bez tego ta sama kancelaria pod dwiema domenami przechodzi
+ * bramkę dwa razy: `lipinska-radca.pl` robi 301 na `lexduo.pl` i oba trafiły do triage'u
+ * 2026-08-30 jako osobne firmy.
  *
  * Użycie:
  *   node dedup-gate.js <dataset.json|lista.csv> [--out <plik.csv>] [--offline]
@@ -20,6 +26,7 @@
  *
  *   --offline    pomija odpytanie arkusza (punkt 4). Do pracy bez sieci — ale wtedy
  *                duplikaty względem Trackera wyjdą dopiero przy zapisie, już po koszcie.
+ *   --bez-przekierowan  nie rozwija 301/302 (szybciej, ale duplikaty pod aliasem domeny przejdą)
  *   --wykluczaj  dodatkowa lista już przerobionych (dowolny CSV z kolumną url). Można podać
  *                wielokrotnie. Potrzebne, bo dziennik odrzuceń żyje w output/, który jest
  *                gitignorowany i nie jeździ między komputerami — a lista wysłana kiedyś do
@@ -59,6 +66,7 @@ const outFlag = (() => {
   const i = args.indexOf('--out');
   return i >= 0 && args[i + 1] && !args[i + 1].startsWith('--') ? args[i + 1] : null;
 })();
+const bezPrzekierowan = args.includes('--bez-przekierowan');
 const wykluczPliki = args.reduce((acc, a, i) => {
   if (a === '--wykluczaj' && args[i + 1] && !args[i + 1].startsWith('--')) acc.push(args[i + 1]);
   return acc;
@@ -100,6 +108,62 @@ function wczytaj(plik) {
   }
   const { leads } = parseLeadsCsv(raw);
   return leads.map(l => ({ ...l, url: l.url || '' }));
+}
+
+// ── Filtr „to w ogóle kancelaria?" ───────────────────────────────────
+
+/**
+ * Apify zwraca wszystko, co Google Maps dopasuje do frazy — w paczce Zabrza siedział
+ * „Urząd Miejski w Zabrzu". Kategoria to jedyne darmowe pole, po którym da się to odsiać
+ * PRZED zrzutem. Odrzucamy wyłącznie rekordy, które kategorie MAJĄ i żadna nie jest
+ * prawnicza — brak kategorii (np. wejście z CSV) przepuszczamy, żeby nie ciąć na ślepo.
+ */
+const KATEGORIA_PRAWNICZA = /adwokat|radc|prawn|prawo|kancelar|notari|komornik|mediac|windykac|patent|doradztwo podatkow/i;
+
+function niePrawnicza(lead) {
+  const kat = (lead.categories || []).filter(Boolean);
+  if (!kat.length) return null;
+  if (kat.some(k => KATEGORIA_PRAWNICZA.test(k))) return null;
+  return kat.slice(0, 3).join(', ');
+}
+
+// ── Rozwijanie przekierowań ──────────────────────────────────────────
+
+/**
+ * Adres docelowy po 301/302 albo `null`, gdy nie da się ustalić. Najpierw HEAD (tanio),
+ * potem GET dla serwerów, które HEAD-a nie obsługują. Sieć bywa zawodna, więc każdy błąd
+ * oznacza „zostaw URL bez zmian" — bramka ma nie przepadać przez jeden martwy host.
+ */
+async function adresDocelowy(url, timeoutMs = 8000) {
+  for (const method of ['HEAD', 'GET']) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { method, redirect: 'follow', signal: ctrl.signal });
+      if (res.url && (res.ok || res.status < 400)) return res.url;
+    } catch { /* następna metoda albo null */ } finally { clearTimeout(t); }
+  }
+  return null;
+}
+
+/** Rozwija przekierowania dla całej paczki, max `limit` naraz. Mutuje `lead.url`. */
+async function rozwinPrzekierowania(leady, limit = 8) {
+  let i = 0, zmienione = 0;
+  const kolejka = leady.filter(l => l.url);
+  async function robotnik() {
+    while (i < kolejka.length) {
+      const lead = kolejka[i++];
+      const zrodlo = ensureScheme(lead.url);
+      const cel = await adresDocelowy(zrodlo);
+      if (cel && normDomena(cel) && normDomena(cel) !== normDomena(zrodlo)) {
+        lead.urlPrzed = zrodlo;
+        lead.url = cel;
+        zmienione++;
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, kolejka.length) }, robotnik));
+  return zmienione;
 }
 
 // ── Lokalne źródła wiedzy ────────────────────────────────────────────
@@ -156,6 +220,14 @@ function wykluczoneZPlikow(pliki) {
   const leady = wczytaj(plikWe);
   console.log(`\nWejście: ${leady.length} rekordów z ${path.basename(plikWe)}`);
 
+  if (bezPrzekierowan || offline) {
+    console.log('⚠ Pomijam rozwijanie przekierowań — aliasy domen mogą przejść jako osobne firmy.');
+  } else {
+    process.stdout.write('Rozwijam przekierowania (bez Firecrawl)… ');
+    const n = await rozwinPrzekierowania(leady);
+    console.log(`${n} adresów wskazywało gdzie indziej`);
+  }
+
   let kluczeArkusza = new Set();
   if (offline) {
     console.log('⚠ --offline: pomijam sprawdzenie względem arkusza (duplikaty wyjdą dopiero przy zapisie).');
@@ -184,6 +256,10 @@ function wykluczoneZPlikow(pliki) {
 
     if (!url || !/\./.test(domena)) { odrzuc('brak poprawnego adresu www'); continue; }
     if (lead.permanentlyClosed)     { odrzuc('firma zamknięta'); continue; }
+
+    // 7 — podmiot spoza branży (urzędy, sądy, firmy przypadkiem dopasowane do frazy)
+    const obceKategorie = niePrawnicza(lead);
+    if (obceKategorie) { odrzuc(`nie kancelaria (${obceKategorie})`); continue; }
 
     // 3 — duplikat w obrębie wejścia
     const klucze = kluczeRekordu({ www: url, tel: lead.telefon, email: lead.email });

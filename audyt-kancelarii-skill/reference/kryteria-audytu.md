@@ -24,6 +24,12 @@ Oceniaj **wyłącznie ze screenshotów** (`screenshot-desktop.png` + `screenshot
 | 4 | **Wiarygodność** | Czy coś obniża zaufanie? | © z dawnym rokiem, komunikaty błędów serwera, Google Sites/darmowy kreator, „PRZERWA TECHNICZNA", niedziałające elementy, opinie-atrapy („Jan Kowalski") |
 | 5 | **Świeżość treści** | Czy widać oznaki życia? | ostatni wpis bloga sprzed lat, nieaktualne informacje, puste sekcje, **data wtopiona w grafikę/skan (np. „…2010 r." na obrazku pisma)** |
 
+**Aktualna treść nie znaczy aktualny design.** Stopka z bieżącym rokiem i świeże wpisy mówią
+o wymiarze 5 (Świeżość treści), a nie o wymiarze 1. Strona pilnie aktualizowana, która nadal jest
+ścianą tekstu bez zdjęć, siatki i przycisków, ma 🔴 w Aktualności designu — „brak systemu designu"
+jest markerem starości nawet bez ani jednej starej daty (przypadek `lukaszmichalik.pl`, 2026-08-30:
+stopka do 2025, a strona to bloki tekstu na granatowym tle, bez CTA).
+
 Wymiar 4 potrafi dać 🔴 na stronie, która wygląda nowocześnie (np. błędy serwera na świeżym szablonie) — w mailu opisz wtedy konkretny błąd/zaniedbanie, **nie sugeruj, że strona jest stara**, bo właściciel od razu zobaczy, że to nieprawda.
 
 **Nie myl zaniedbania całej strony z pojedynczym niedokończonym elementem.** Jedna pusta sekcja (akordeon bez rozwiniętej treści, nieużywana zakładka bloga) na stronie, która poza tym ma nowoczesny hero, realne zdjęcia i spójną markę, to **🟡, nie 🔴** — to drobne niedopracowanie wykonawcze, nie sygnał „ta strona przestała reprezentować kancelarię". 🔴 w Wiarygodności/Świeżości treści zarezerwuj dla sygnałów, które dotyczą **całej strony**: błąd wypisany na stronie, martwa platforma, jawnie stara data, albo **kilka** takich drobiazgów naraz (nie jeden).
@@ -99,7 +105,7 @@ pole puste w danych to „nie wiem", nie „nie ma".
 | | Wymiar | 0 | 1 | 2 |
 |---|---|---|---|---|
 | **A** | **Potrzeba przebudowy** | tylko kosmetyka | widoczne niedoskonałości | wyraźna potrzeba nowej strony |
-| **B** | **Potencjał finansowy** | brak widocznych sygnałów | stabilna mała kancelaria | zespół, obsługa firm, profesjonalne materiały, rozbudowana działalność lub kilka lokalizacji |
+| **B** | **Potencjał finansowy** | brak jakichkolwiek sygnałów, że ktoś tu wydaje pieniądze na obecność | działająca praktyka bez widocznych wydatków na markę | co najmniej jeden konkretny wydatek na obecność: własny lokal, płatna akwizycja, obsługa firm, rekrutacja, płatne narzędzia na stronie, kilka lokalizacji, długi staż |
 | **C** | **Skala możliwej poprawy** | niewielka | umiarkowana | duża i łatwa do pokazania |
 | **D** | **Naturalny powód do kontaktu** | trzeba go wymyślać | istnieje, ale przeciętny | konkretny, prawdziwy i charakterystyczny |
 
@@ -108,7 +114,7 @@ Skąd brać dane do każdego wymiaru:
 | Wymiar | Główne źródło | Uwaga |
 |---|---|---|
 | A | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ A2, `sredni` ≈ A1, `niski` ≈ A0. To punkt wyjścia, nie automat |
-| B | `teamPage.lawyerCount`, `teamPage.titles`, `servicesPage.practiceAreas` (`obsługa firm`), `teamPage.locationCount` | **najsłabiej widoczny wymiar** — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` — **z wyjątkiem klauzuli braku dowodu, patrz niżej** |
+| B | wydatki widoczne w treści i profilu: własne biuro, staż, płatna akwizycja, rekrutacja, obsługa firm, płatne narzędzia (płatności online, rezerwacja terminu), `teamPage.locationCount` | **`teamPage.lawyerCount` NIE jest tu kryterium — patrz „Wielkość zespołu" niżej.** Poza tym najsłabiej widoczny wymiar — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` — **z wyjątkiem klauzuli braku dowodu, patrz niżej** |
 | C | różnica między tym, czym kancelaria jest (B), a tym, co pokazuje strona (A) | „łatwa do pokazania" = dasz się to opisać w jednym zdaniu maila |
 | D | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1 |
 
@@ -123,6 +129,41 @@ hak (D)**. Pamiętaj o tym, czytając sumę — 6/8 zbudowane z A2+C2+B1+D1 to z
 niż 6/8 z A1+C1+B2+D2, mimo identycznej liczby.
 
 ---
+
+### Wielkość zespołu nie jest kryterium B
+
+**Decyzja właściciela produktu, 2026-08-30.** Jednoosobowa kancelaria **nie jest gorszym leadem** —
+`teamPage.lawyerCount = 1` (albo brak `teamPage`) nie obniża B i nigdy nie jest samodzielnym
+uzasadnieniem oceny. Adwokat prowadzący praktykę solo od kilkunastu lat, z własnym biurem i
+płatnym pozycjonowaniem, ma budżet na stronę; kancelaria z pięcioma nazwiskami na podstronie
+może go nie mieć.
+
+**Powód zmiany:** na paczce 15 stron `priorytet_wizualny: wysoki` (Sosnowiec, Częstochowa, Zabrze,
+Dąbrowa Górnicza) średnie B wyniosło 1,07 przy średnim A 1,53. Jedenaście z piętnastu firm dostało
+B=0–1, a w uzasadnieniach wracała ta sama formuła: „solo praktyka bez sygnałów skali". Wymiar B
+nie mierzył wtedy budżetu — mierzył liczbę prawników, czyli rzecz, która z budżetem nie musi mieć
+związku. Siedem firm utknęło przez to na 5–6/8 mimo wyraźnie starej strony.
+
+**Czym B jest zamiast tego:** pytaniem „czy ta kancelaria wydaje pieniądze na swoją obecność?".
+Każdy z poniższych to konkretny wydatek i wystarcza na B=2, jeśli jest widoczny w danych:
+- własny lokal/biuro (adres inny niż mieszkanie, zdjęcie wnętrza kancelarii)
+- płatna akwizycja klientów (Google Ads, pozycjonowanie, płatne wizytówki w katalogach)
+- obsługa firm / stała obsługa prawna wymieniona w ofercie
+- rekrutacja (nabór aplikanta, ogłoszenie o pracę) — ktoś planuje rosnąć
+- płatne narzędzia na stronie (płatności online, system rezerwacji terminu, chat)
+- kilka lokalizacji lub kilka wizytówek Google
+- długi staż praktyki (≥10 lat) przy utrzymywanej, opłacanej domenie
+
+B=0 zostaw dla sytuacji, w której naprawdę nic nie wskazuje na wydatki: darmowa platforma,
+brak własnej domeny, brak jakiegokolwiek śladu płatnej obecności.
+
+**Czego nie wolno napisać w `uzasadnienie` wymiaru B:** „kancelaria jednoosobowa", „solo praktyka",
+„brak zespołu", „brak sygnałów skali" — jako powodu obniżenia oceny. Jeśli obniżasz B, napisz,
+jakiego **wydatku** zabrakło, nie ilu ludzi.
+
+**Priorytet przy sprzeczności:** najważniejszy sygnał to stan wizualny strony (Krok 0). Jeśli
+strona jest wyraźnie słaba wizualnie, a B jest niepewne — dokumentuj niepewność w `uzasadnienie`,
+nie karz nią leada.
 
 ### Klauzula braku dowodu (B przy nieobecnej lub zepsutej stronie)
 

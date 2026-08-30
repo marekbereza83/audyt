@@ -64,7 +64,9 @@ const PODSTRONY_AKTYWNE = (process.env.FIRECRAWL_PODSTRONY || 'services,team,new
   .split(',').map(s => s.trim()).filter(Boolean);
 
 const arg1 = process.argv[2];
-if (!arg1) {
+// Brak argumentu jest błędem tylko przy uruchomieniu z linii poleceń — jako moduł
+// (test `jakoscTresci`) plik ma się dać wymagać bez wypisywania instrukcji i wyjścia.
+if (!arg1 && require.main === module) {
   console.error('Użycie:\n  node scrape.js <url> [<url-konkurenta>]\n  node scrape.js --batch <lista.csv>   (CSV: nazwa,url lub format rozszerzony)');
   process.exit(1);
 }
@@ -770,6 +772,31 @@ async function scrapeVitals(targetUrl, outDir, { withScreenshots = true } = {}) 
   return vitals;
 }
 
+/**
+ * Ostrzeżenie, gdy Firecrawl oddał coś, co nie jest treścią strony.
+ *
+ * Cichy fałszywy negatyw: `adwokat-kalczuga.pl` zwrócił stronę błędu serwera („400 Bad Request",
+ * 8 słów), a `content.json` wyglądał jak poprawny wynik — audyt ocenił więc komunikat błędu
+ * zamiast kancelarii i skreślił lead na 2/8. Zrzut Playwrighta pokazywał normalną stronę, bo
+ * przeglądarka dostaje inną odpowiedź niż Firecrawl. Flaga nie zmienia oceny — ma sprawić, żeby
+ * ocena nie powstała po cichu na śmieciach.
+ */
+function jakoscTresci(content) {
+  const powody = [];
+  const naglowki = [content.metaTitle || '', ...(content.h1 || [])].join(' ');
+  if (/[45]\d{2}|bad request|forbidden|not found|internal server error|service unavailable/i.test(naglowki)) {
+    powody.push(`nagłówek wygląda na stronę błędu: „${naglowki.trim().slice(0, 80)}"`);
+  }
+  if ((content.wordCount ?? 0) < 50) {
+    powody.push(`tylko ${content.wordCount} słów treści — strona renderowana JS-em albo blokada scrapera`);
+  }
+  return powody.length ? { podejrzana: true, powody } : { podejrzana: false, powody: [] };
+}
+
+// Eksport wyłącznie do testów — plik dalej działa jako CLI (nie ma tu require.main guard,
+// bo blok uruchomieniowy siedzi na samym dole i wykonuje się tylko dla argv z komendą).
+module.exports = { jakoscTresci };
+
 // ── Audyt jednej strony (treść + wydajność + opcjonalny konkurent) ──
 async function auditOne(targetUrl, { competitorUrl } = {}) {
   const outDir = outDirFor(targetUrl);
@@ -777,6 +804,10 @@ async function auditOne(targetUrl, { competitorUrl } = {}) {
   // Treść (Firecrawl) — gdy zawiedzie, rzucamy dalej (batch zaznaczy błąd, single zakończy).
   // withSubpages: dociąga „Zakres usług" (specjalizacja z treści, nie z hero), „Zespół" i „Aktualności".
   const content = await scrapeContent(targetUrl, { withSubpages: true });
+  content.jakoscTresci = jakoscTresci(content);
+  if (content.jakoscTresci.podejrzana) {
+    console.error(`    ⚠ Podejrzana treść (${targetUrl}): ${content.jakoscTresci.powody.join('; ')}`);
+  }
   fs.writeFileSync(path.join(outDir, 'content.json'), JSON.stringify(content, null, 2));
 
   // Wydajność + screenshoty (Playwright/Lighthouse) — błąd tu nie przekreśla audytu treści.
@@ -999,6 +1030,10 @@ async function runPeekBatch(csvPath) {
 }
 
 // ── Dispatch ────────────────────────────────────────────────────────
+// `require.main` — plik bywa też wymagany jako moduł (testy `jakoscTresci`); bez tego
+// samo `require('./scrape.js')` wypisywało instrukcję użycia i kończyło proces.
+if (require.main !== module) return;
+
 (async () => {
   if (arg1 === '--batch') {
     const csvPath = process.argv[3];

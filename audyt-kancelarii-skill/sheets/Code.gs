@@ -1,5 +1,5 @@
 /**
- * FORMA — webhook zapisu „rodzynków" (7–8/8) do zakładki „Claude_import".
+ * FORMA — webhook zapisu „rodzynków" (5–6/6) do zakładki „Claude_import".
  *
  * Wdrożenie opisuje sheets/README.md. W skrócie:
  *   1. Rozszerzenia → Apps Script w arkuszu FORMA-cold-outreach-tracker
@@ -24,10 +24,10 @@ const ARKUSZ_TRACKER = 'Tracker';
  */
 const KOLUMNY = [
   'Nazwa kancelarii', 'Miasto', 'Strona www', 'Telefon', 'Email',
-  'priorytet_wizualny', 'decyzja', 'scoring_0_8', 'glowny_problem',
+  'priorytet_wizualny', 'decyzja', 'scoring_0_6', 'glowny_problem',
   'obserwacja_do_maila', 'powod_biznesowy', 'zrodlo_audytu', 'data_audytu',
   // ── poniżej: wyłącznie Claude_import, nie ma odpowiednika w Trackerze ──
-  'potrzeba_0_2', 'potencjal_0_2', 'skala_poprawy_0_2', 'powod_kontaktu_0_2',
+  'potrzeba_0_2', 'skala_poprawy_0_2', 'powod_kontaktu_0_2',
   'mocne_przeslanki', 'co_jest_kosmetyka', 'sprawdzone_podstrony', 'data_dodania',
   'status_importu',
 ];
@@ -194,7 +194,7 @@ function doGet(e) {
  * POST — dopisuje rodzynki do „Claude_import".
  * Body: { "sekret": "...", "leady": [ { "Nazwa kancelarii": "...", ... }, ... ] }
  *
- * Odrzuca wszystko, co nie jest 7–8/8 z decyzją PISAĆ (zasady 5–6 procesu),
+ * Odrzuca wszystko, co nie jest 5–6/6 z decyzją PISAĆ (zasady 5–6 procesu),
  * oraz duplikaty względem „Trackera" i „Claude_import".
  */
 function doPost(e) {
@@ -235,10 +235,13 @@ function doPost(e) {
     for (const lead of leady) {
       const nazwa = lead['Nazwa kancelarii'] || '(bez nazwy)';
 
-      // Zasady 5–6: tylko 7–8/8 i tylko PISAĆ.
-      const pkt = parseInt(String(lead['scoring_0_8'] || '').match(/\d+/), 10);
-      if (!(pkt >= 7 && pkt <= 8)) {
-        raport.odrzucone.push(nazwa + ' — scoring ' + (lead['scoring_0_8'] || '?'));
+      // Zasady 5–6 procesu: tylko 5–6/6 i tylko PISAĆ.
+      // Skala zmieniona 2026-08-30 z 0–8 na 0–6 (usunięty wymiar „potencjał finansowy").
+      // Nagłówek kolumny w arkuszu musi się nazywać scoring_0_6 — inaczej wiersz wejdzie
+      // niekompletny, tak jak przy kolizji pola zrodlo_audytu.
+      const pkt = parseInt(String(lead['scoring_0_6'] || '').match(/\d+/), 10);
+      if (!(pkt >= 5 && pkt <= 6)) {
+        raport.odrzucone.push(nazwa + ' — scoring ' + (lead['scoring_0_6'] || '?'));
         continue;
       }
       if (String(lead['decyzja'] || '').trim().toUpperCase() !== 'PISAĆ') {
@@ -269,6 +272,22 @@ function doPost(e) {
     }
 
     if (doZapisu.length) {
+      // Zapis jest POZYCYJNY (KOLUMNY.map → setValues), więc rozjazd nagłówka arkusza
+      // z KOLUMNY przesunąłby wszystkie wartości o jedną kolumnę i zapisał je po cichu
+      // w złych polach. Po zmianie skali 0–8 → 0–6 (2026-08-30) arkusze utworzone
+      // wcześniej mają nagłówki `scoring_0_8` i `potencjal_0_2` — dlatego sprawdzamy
+      // nagłówek przed każdym zapisem i wolimy głośno odmówić niż cicho przestawić dane.
+      const naglowek = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]
+        .map(function (v) { return String(v).trim(); });
+      const rozjazd = KOLUMNY.filter(function (k, i) { return naglowek[i] !== k; });
+      if (rozjazd.length) {
+        return odpowiedz({
+          ok: false,
+          blad: 'Nagłówek zakładki „' + ARKUSZ_IMPORT + '" nie zgadza się z oczekiwanym układem kolumn. '
+            + 'Oczekiwano: ' + KOLUMNY.join(', ') + '. W arkuszu: ' + naglowek.slice(0, KOLUMNY.length).join(', ') + '. '
+            + 'Po zmianie skali na 0–6 zmień nagłówek scoring_0_8 → scoring_0_6 i usuń kolumnę potencjal_0_2.',
+        });
+      }
       sh.getRange(sh.getLastRow() + 1, 1, doZapisu.length, KOLUMNY.length).setValues(doZapisu);
     }
 

@@ -14,10 +14,10 @@ koszt, data). Ten plik to tylko checklista zakresu/kolejności — nie duplikuj 
 | Katowice | ✅ 2026-08-04 | częściowo (batch Katowice+Gliwice) | częściowo | starszy przebieg (5 fraz) + dobitka (9 fraz) |
 | Gliwice | ✅ 2026-08-04 | ✅ | ✅ | w batchu Katowice+Gliwice |
 | Bielsko-Biała | ✅ 2026-08-29 | ✅ | ✅ | 13 firm zaudytowanych 2026-08-30, 3× PISAĆ |
-| Sosnowiec | ✅ 2026-08-30 ($0.288, 48 wyników) | ✅ 41 ocenionych (4 wysoki / 8 sredni / 25 niski / 4 do sprawdzenia) | ⬜ | 12 do audytu |
-| Częstochowa | ✅ 2026-08-30 ($0.000, 52 wyników) | ✅ 39 ocenionych (5 wysoki / 5 sredni / 29 niski) | ⬜ | 10 do audytu |
-| Zabrze | ✅ 2026-08-30 ($0.252, 42 wyników) | ✅ 29 ocenionych (1 wysoki / 4 sredni / 22 niski / 2 do sprawdzenia) | ⬜ | 5 do audytu; w liście był przeciek „Urząd Miejski w Zabrzu" |
-| Dąbrowa Górnicza | ✅ 2026-08-30 ($0.216, 36 wyników) | ✅ 24 ocenionych (5 wysoki / 7 sredni / 12 niski) | ⬜ | 12 do audytu; najwyższy odsetek starych stron |
+| Sosnowiec | ✅ 2026-08-30 ($0.288, 48 wyników) | ✅ 41 ocenionych (4 wysoki / 8 sredni / 25 niski / 4 do sprawdzenia) | 🔄 4 z 4 wysoki (3 PISAĆ) | zostało 8 sredni |
+| Częstochowa | ✅ 2026-08-30 ($0.000, 52 wyników) | ✅ 39 ocenionych (5 wysoki / 5 sredni / 29 niski) | 🔄 5 z 5 wysoki (3 PISAĆ) | zostało 5 sredni |
+| Zabrze | ✅ 2026-08-30 ($0.252, 42 wyników) | ✅ 29 ocenionych (1 wysoki / 4 sredni / 22 niski / 2 do sprawdzenia) | 🔄 1 z 1 wysoki (1 PISAĆ) | zostało 4 sredni |
+| Dąbrowa Górnicza | ✅ 2026-08-30 ($0.216, 36 wyników) | ✅ 24 ocenionych (5 wysoki / 7 sredni / 12 niski) | 🔄 5 z 5 wysoki (4 PISAĆ) | zostało 7 sredni |
 | Bytom | ⬜ | ⬜ | ⬜ | |
 | Chorzów | ⬜ | ⬜ | ⬜ | |
 | Jastrzębie-Zdrój | ⬜ | ⬜ | ⬜ | |
@@ -72,3 +72,25 @@ Uwagi z przebiegu:
   kancelariami; filtr po `categories` wyciąłby to za darmo.
 - 6 werdyktów `do sprawdzenia` to głównie artefakty (pusty zrzut, ekran Cloudflare, 404)
   — przed wysyłką wymagają spojrzenia na żywo, nie nadają się na materiał do maila.
+
+## Pełny audyt 15 stron `wysoki` — wynik 2026-08-30/31
+
+Budżet Firecrawl: 35 → **50/160**. Scrape 15/15 bez błędu.
+
+**11 leadów `PISAĆ`** (skala 0–6, po usunięciu wymiaru „potencjał finansowy"):
+
+| 6/6 | 5/6 |
+|---|---|
+| kancelaria-pasternak.pl · adwokatposlednik.pl · grobelak.com | adwokatdurdzinski.pl · solegal.pl · lukaszmichalik.pl · adwokatpapierowski.pl · adwokat-kancelaria.net.pl · kancelariapkw.pl · adwokat-hera.pl · adwokat-panczyk.pl |
+
+**4 × ODPUŚCIĆ:** doradze.pl (0/6), rozwodczestochowa.com (0/6) — strony nowoczesne;
+adwokat-hajdula.pl (3/6) i adwokat-kalczuga.pl (2/6) — **oceniane na zepsutym scrape'ie**
+(12 i 8 słów, u kalczugi strona błędu „400 Bad Request"), do ponownego pobrania przed decyzją.
+
+Trzy leady (`kancelariapkw.pl`, `adwokat-panczyk.pl`) mają `jakoscTresci.podejrzana` i zostały
+ocenione wyłącznie ze zrzutów zgodnie z klauzulą zepsutej strony — przy weryfikacji przed wysyłką
+warto na nie spojrzeć na żywo.
+
+**Do zrobienia po stronie człowieka przed `push-import.js`:** przewdrożyć `sheets/Code.gs`
+i poprawić nagłówki zakładki `Claude_import` (`scoring_0_8` → `scoring_0_6`, usunąć
+`potencjal_0_2`). Webhook odmówi zapisu, dopóki nagłówek się nie zgadza.

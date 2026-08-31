@@ -50,7 +50,7 @@ node batch-report.js lista.csv   # → output/batch-leady.csv (+ batch-pominiete
 # Walidacja audytu/kwalifikacji przed przekazaniem dalej
 node validate-lead.js <domena>   # albo --all
 
-# Rodzynki 7–8/8 (PISAĆ) do zakładki Claude_import (status_importu: NOWY)
+# Rodzynki 5–6/6 (PISAĆ) do zakładki Claude_import (status_importu: NOWY)
 node push-import.js <leady.json>
 ```
 
@@ -60,7 +60,7 @@ Darmowy plan dopuszcza też tylko **2 równoległe żądania**, dlatego `--batch
 
 Licznik zużycia: `scripts/budzet.js` → `output/budzet-firecrawl.json`, limit `FIRECRAWL_LIMIT_AUDYTOW` (domyślnie 160, czyli ~20% zapasu pod 200). `--batch` przycina paczkę, zanim ruszy, zamiast wyczerpać limit w połowie. Licznik jest lokalny — przy pracy z dwóch komputerów każdy liczy swoje.
 
-Zestaw dociąganych podstron: `FIRECRAWL_PODSTRONY` (domyślnie `services,team,news,contact`). **Nie tnij go „na oszczędność"** — bez `team` wymiar B siada, a bez B2 lead prawie nigdy nie dobija do 7–8/8, więc tańsze audyty po prostu rzadziej znajdują rodzynki. Właściwa oszczędność to darmowa bramka peek przed audytem, nie uboższy audyt.
+Zestaw dociąganych podstron: `FIRECRAWL_PODSTRONY` (domyślnie `services,team,news,contact`). **Nie tnij go „na oszczędność"** — bez `services` i `news` siadają wymiary „skala poprawy" i „powód do kontaktu", więc tańsze audyty po prostu rzadziej znajdują rodzynki. Właściwa oszczędność to darmowa bramka peek przed audytem, nie uboższy audyt.
 
 Lighthouse mierzy z profilu mobilnego pod throttlingiem — LCP na desktopie będzie niższe niż zmierzone.
 
@@ -68,7 +68,7 @@ Lighthouse mierzy z profilu mobilnego pod throttlingiem — LCP na desktopie bę
 
 ## Trzy niezależne warstwy
 
-`priorytet_wizualny` (jak strona wygląda, Krok 0) ≠ `score_audytu_0_100`/`tier_audytu` (jakość/kompletność strony, 8 wymiarów) ≠ `kwalifikacja_leada.scoring_0_8` (szansa sprzedaży, A/B/C/D). Nigdy nie pisz gołego „score" bez podania skali — niski `score_audytu_0_100` nie oznacza dobrego leada. Pełne wyjaśnienie i kanoniczny szablon pól: `reference/kryteria-audytu.md` → „Ocena leada" i `reference/schemat-audyt-dane.json`.
+`priorytet_wizualny` (jak strona wygląda, Krok 0) ≠ `score_audytu_0_100`/`tier_audytu` (jakość/kompletność strony, 8 wymiarów) ≠ `kwalifikacja_leada.scoring_0_6` (szansa sprzedaży, 3 wymiary). Nigdy nie pisz gołego „score" bez podania skali — niski `score_audytu_0_100` nie oznacza dobrego leada. Pełne wyjaśnienie i kanoniczny szablon pól: `reference/kryteria-audytu.md` → „Ocena leada" i `reference/schemat-audyt-dane.json`.
 
 ## Model danych — co jest w content.json
 
@@ -84,14 +84,14 @@ Kluczowe pola i jak mapują na wymiary audytu:
 | `ethicsFlags[]` | 8 — Etyka (5) | niepuste → ❌; puste → ✅ |
 | `metaDescription`, `hasStructuredData` | 7 — SEO (10) | brak desc lub JSON-LD → ⚠️; brak obu lub brak H1 → ❌ |
 | `ageSignals` (copyrightYear, generator, templateHints) | Ocena leada — A | ślady wieku/zaniedbania: stary copyright, stary szablon (templatemo), CMS w `<meta generator>` |
-| `teamPage` (lawyerCount, titles, corporateClients, locationCount) | Ocena leada — B | scraper dociąga podstronę „Zespół"/„O kancelarii"; bez niej wymiar B (potencjał finansowy) nie ma się z czego wziąć poza domysłem |
+| `teamPage` (lawyerCount, titles, corporateClients, locationCount) | kontekst do rozmowy, NIE punkty | scraper dociąga podstronę „Zespół"/„O kancelarii". Od 2026-08-30 nie ma wymiaru „potencjał finansowy" — te pola opisują kancelarię w raporcie, ale nie podnoszą ani nie obniżają kwalifikacji |
 | `newsPage` (lastPostDate, lataOdWpisu) | Ocena leada — D | scraper dociąga podstronę „Aktualności"/„Blog"; data ostatniego wpisu to najtwardszy dowód „strona stoi" |
 | `contactPage` (emails, phones, postalCodes) | dane do trackera, nie do oceny | scraper dociąga podstronę „Kontakt" — email do `Claude_import` często jest TYLKO tam, strona główna pokazuje go rzadziej niż telefon |
-| `ageSignals`+`servicesPage`+`teamPage` | Ocena leada — A/C | rozdźwięk status⇄strona — patrz `kryteria-audytu.md` → „Ocena leada" (4 wymiary A/B/C/D) |
+| `ageSignals`+`servicesPage`+`teamPage` | Ocena leada — potrzeba/skala poprawy | rozdźwięk status⇄strona — patrz `kryteria-audytu.md` → „Ocena leada" (3 wymiary, 0–6) |
 
 W trybie `--batch` scraper zapisuje dodatkowo `output/<domena>/lead-info.json` — identyfikacja leada, status operacyjny, kontekst Google Maps (`totalScore`/`reviewsCount` — sygnał pomocniczy dla wymiaru B, nie dowód budżetu) i blokada kontaktu (`mail_zablokowany`+`powod_blokady`).
 
-Pełne kryteria z progami: `reference/kryteria-audytu.md`. Ocena leada (4 wymiary A–D, suma 0–8, próg zapisu 7–8 = `PISAĆ`) to **wewnętrzna** kwalifikacja — nigdy nie trafia do `mail-observation.txt`. Rodzynki 7–8/8 trafiają do zakładki „Claude_import" arkusza trackera (`status_importu: NOWY`) przez `scripts/push-import.js` (patrz `sheets/README.md`); dalej (weryfikacja, treść maila, szkic Gmail) pracuje druga automatyzacja (ChatGPT), nie Claude.
+Pełne kryteria z progami: `reference/kryteria-audytu.md`. Ocena leada (3 wymiary, suma 0–6, próg zapisu 5–6 = `PISAĆ`) to **wewnętrzna** kwalifikacja — nigdy nie trafia do `mail-observation.txt`. Rodzynki 5–6/6 trafiają do zakładki „Claude_import" arkusza trackera (`status_importu: NOWY`) przez `scripts/push-import.js` (patrz `sheets/README.md`); dalej (weryfikacja, treść maila, szkic Gmail) pracuje druga automatyzacja (ChatGPT), nie Claude.
 
 ## Model danych — co jest w vitals.json
 

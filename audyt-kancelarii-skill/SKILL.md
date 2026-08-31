@@ -86,11 +86,16 @@ Na końcu zapisz też `output/<domena>/audyt-dane.json` — strukturalne dane (8
 
 ### Krok 5 — Ocena leada (kwalifikacja pod kątem sprzedaży)
 
-Osobno od score konwersji: czy **ta konkretna** kancelaria to szansa sprzedaży nowej strony za
-~4 500–6 500 zł? Przejdź przez 4 wymiary A/B/C/D z `reference/kryteria-audytu.md` → „Ocena leada"
-(źródła: `priorytet_wizualny` + `ageSignals` dla A, `teamPage` dla B, różnica A↔B dla C,
-`newsPage`/konkretny błąd dla D). Zapisz rozbicie punktacji jak w formacie z kryteriów, do
-`audyt-dane.json` → `kwalifikacja_leada`.
+Osobno od score konwersji: czy właściciel **tej konkretnej** strony może uznać, że przestała go
+reprezentować — i czy mamy o czym z nim zacząć rozmowę? Przejdź przez 3 wymiary z
+`reference/kryteria-audytu.md` → „Ocena leada": **potrzeba przebudowy** (`priorytet_wizualny` +
+`ageSignals` + mobile), **skala poprawy** (co widać do naprawienia na zrzutach i w `servicesPage`),
+**powód do kontaktu** (`newsPage`/konkretny błąd ze zrzutu). Zapisz rozbicie punktacji jak
+w formacie z kryteriów, do `audyt-dane.json` → `kwalifikacja_leada`.
+
+**Nie oceniamy, czy klienta stać.** Wymiar „potencjał finansowy" został usunięty ze skali
+2026-08-30 — wielkość kancelarii, liczba prawników i liczba opinii nie są punktami. Jednoosobowa
+praktyka ze słabą wizualnie stroną jest pełnoprawnym leadem.
 
 **Ta ocena nigdy nie trafia do obserwacji ani do maila** — to wewnętrzna kwalifikacja, odbiorca nie ma wiedzieć, że go punktujemy.
 
@@ -98,8 +103,8 @@ Werdykt:
 
 | Suma | `decyzja` | Co dalej |
 |---|---|---|
-| **7–8** | `PISAĆ` | przejdź do Kroku 6 — zapisz obserwację i przekaż do `Claude_import` |
-| 5–6 | `ODPUŚCIĆ` (rozróżnienie od 0–4 widać po `scoring_0_8`) | **nie zapisuj do arkusza, nie pisz obserwacji.** Zaloguj lokalnie: `node scripts/log-odrzucone.js <domena> <scoring_0_8> "<powod>"` |
+| **5–6** | `PISAĆ` | przejdź do Kroku 6 — zapisz obserwację i przekaż do `Claude_import` |
+| 3–4 | `ODPUŚCIĆ` (rozróżnienie od 0–2 widać po `scoring_0_6`) | **nie zapisuj do arkusza, nie pisz obserwacji.** Zaloguj lokalnie: `node scripts/log-odrzucone.js <domena> <scoring_0_6> "<powod>"` |
 | 0–4 | `ODPUŚCIĆ` | to samo, `log-odrzucone.js` |
 | brak danych / strona niedostępna | `null` (`pewnosc_oceny` ≠ `pelna`) | nie oceniaj — oznacz `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie zapisuj nigdzie |
 
@@ -173,7 +178,7 @@ Wzór (długość dowolna, byle jedna obserwacja + jedno pytanie — i **nic poz
 
 Po zapisaniu obserwacji: zbierz dane w formacie kolumn `Claude_import` (patrz `sheets/README.md`) i wyślij: `node scripts/push-import.js <leady.json>`. Webhook sam odrzuci duplikaty względem „Tracker" i „Claude_import" oraz zapisze `status_importu: NOWY` — nie zapisuj nic w arkuszu ręcznie i nie ustawiaj `PRZEJĘTY` (to robi ChatGPT po przejęciu rekordu).
 
-Przy audycie wsadowym: po przejściu Kroków 5–6 dla każdej kancelarii z listy podaj podsumowanie paczki (sprawdzone / odrzucone / duplikaty / 5–6 niezapisane / nowe rodzynki 7–8/8 wysłane do importu / strony niesprawdzone) — format z `reference/kryteria-audytu.md` → „Ocena leada".
+Przy audycie wsadowym: po przejściu Kroków 5–6 dla każdej kancelarii z listy podaj podsumowanie paczki (sprawdzone / odrzucone / duplikaty / 3–4 niezapisane / nowe rodzynki 5–6/6 wysłane do importu / strony niesprawdzone) — format z `reference/kryteria-audytu.md` → „Ocena leada".
 
 ## Wyjście
 
@@ -190,7 +195,7 @@ Gdy trzeba zaudytować całą listę kancelarii naraz (np. świeży dataset Apif
    - `output/batch-leady.csv` — **GŁÓWNY raport** (sortowanie: `PISAĆ` → `ODPUŚCIĆ` → wstępne/do ponownego audytu; w ramach decyzji scoring malejąco).
    - `output/batch-pominiete.csv` — wykluczone: blokada kontaktu, firmy zamknięte, duplikaty, zły URL.
    - `output/batch-nieudane.csv` — strony, których nie udało się pobrać. Do ręcznej weryfikacji, batch **nie ponawia** automatycznie.
-5. **Przekazanie rodzynków** — zbierz leady `PISAĆ` (7–8/8) w formacie kolumn `Claude_import` i wyślij: `node scripts/push-import.js <leady.json>` (patrz Krok 6).
+5. **Przekazanie rodzynków** — zbierz leady `PISAĆ` (5–6/6) w formacie kolumn `Claude_import` i wyślij: `node scripts/push-import.js <leady.json>` (patrz Krok 6).
 
 **Warunek wstępny:** batch na **prawdziwych** kancelariach dopiero po przejściu kalibracji na stronie testowej (`zla-strona-testowa-spec.md`). Jeśli kalibracja nie przeszła — zatrzymaj się i o tym przypomnij.
 
@@ -206,7 +211,7 @@ Gdy trzeba zaudytować całą listę kancelarii naraz (np. świeży dataset Apif
 - `scripts/csv-utils.js` — wspólny parser CSV (legacy/rozszerzony) + normalizacja/dedup dla `scrape.js` i `batch-report.js`
 - `scripts/batch-report.js` — zbiera wyniki batcha do `output/batch-leady.csv`
 - `scripts/validate-lead.js` — waliduje `audyt-dane.json` przed przekazaniem dalej (`node validate-lead.js <domena>|--all`)
-- `scripts/push-import.js` — wysyła rodzynki 7–8/8 do zakładki „Claude_import" arkusza (dedup po stronie arkusza)
+- `scripts/push-import.js` — wysyła rodzynki 5–6/6 do zakładki „Claude_import" arkusza (dedup po stronie arkusza)
 - `scripts/log-odrzucone.js` — loguje lokalnie leady 5–6/8 do `output/odrzucone.csv`, żeby nie audytować drugi raz
 - `sheets/Code.gs` + `sheets/README.md` — webhook Apps Script obsługujący zapis i dedup w arkuszu (wdrożenie jednorazowe)
 - `scripts/package.json` — zależności

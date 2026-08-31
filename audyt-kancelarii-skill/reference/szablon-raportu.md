@@ -2,7 +2,7 @@
 
 Wypełnij ten szablon danymi z audytu. Usuń komentarze w nawiasach `[…]`. Zachowaj ton merytoryczny — fakt, konsekwencja, rozwiązanie.
 
-**Audyt publiczny (blog/LinkedIn):** anonimizuj nazwę kancelarii i nie wpisuj żadnych przypuszczeń o budżecie, przychodach ani sytuacji finansowej kancelarii (te pola istnieją tylko wewnętrznie w `kwalifikacja_leada`, wymiar B — nigdy w treści raportu, publicznego czy nie).
+**Audyt publiczny (blog/LinkedIn):** anonimizuj nazwę kancelarii i nie wpisuj żadnych przypuszczeń o budżecie, przychodach ani sytuacji finansowej kancelarii (od 2026-08-30 nie oceniamy budżetu w ogóle — takie zdania nie należą do raportu, publicznego czy nie).
 
 ---
 
@@ -106,4 +106,4 @@ Największy potencjał: [1 zdanie — co da największy zwrot]. Pozostałe zmian
 
 ---
 
-> **Notatka (nie część raportu):** Ta sekcja może zostać technicznie szczegółowa — to dokument wewnętrzny FORMA. **Nie jest jednak bezpośrednim źródłem `mail-observation.txt`.** `mail-observation.txt` to jedna konkretna, weryfikowalna obserwacja + jedno pytanie otwarte, bez żargonu technicznego (patrz `SKILL.md` → Krok 6) — audyt dostarcza tylko najmocniejszy sygnał do przetłumaczenia, nie gotowe zdanie z tej sekcji. Powstaje wyłącznie dla leadów `PISAĆ` (7–8/8) — patrz `reference/szablon-kwalifikacji.md`. W trybie wsadowym zbiorczy raport to `output/batch-leady.csv` (`node batch-report.js <lista.csv>`).
+> **Notatka (nie część raportu):** Ta sekcja może zostać technicznie szczegółowa — to dokument wewnętrzny FORMA. **Nie jest jednak bezpośrednim źródłem `mail-observation.txt`.** `mail-observation.txt` to jedna konkretna, weryfikowalna obserwacja + jedno pytanie otwarte, bez żargonu technicznego (patrz `SKILL.md` → Krok 6) — audyt dostarcza tylko najmocniejszy sygnał do przetłumaczenia, nie gotowe zdanie z tej sekcji. Powstaje wyłącznie dla leadów `PISAĆ` (5–6/6) — patrz `reference/szablon-kwalifikacji.md`. W trybie wsadowym zbiorczy raport to `output/batch-leady.csv` (`node batch-report.js <lista.csv>`).

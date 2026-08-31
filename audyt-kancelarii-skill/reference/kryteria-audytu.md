@@ -71,24 +71,30 @@ Markery: ©2017 w stopce · teksturowane tło · wąska ramka · ostatni wpis 20
 
 ---
 
-## Ocena leada — 4 wymiary, 0–8 (kwalifikacja wewnętrzna, poza score)
+## Ocena leada — 3 wymiary, 0–6 (kwalifikacja wewnętrzna, poza score)
 
 **To nie jest ocena strony — to ocena szansy sprzedaży.** Zapisywana w trackerze jako
-`scoring_0_8` + `decyzja`. **Nigdy nie trafia do `mail-observation.txt` ani do maila** — odbiorca
+`scoring_0_6` + `decyzja`. **Nigdy nie trafia do `mail-observation.txt` ani do maila** — odbiorca
 nie ma wiedzieć, że go punktujemy.
 
 **Trzy niezależne warstwy — nigdy nie myl ich w rozmowie ani w raporcie:**
 
 1. `priorytet_wizualny` (Krok 0) — jak strona **wygląda** oczami klienta. Nie wchodzi do score.
-2. `score_audytu_0_100` + `tier_audytu` — jakość/kompletność strony pod kątem konwersji (8 wymiarów niżej). To NIE jest prawdopodobieństwo zakupu — nigdy nie pisz gołego „score" bez podania skali (0–100 vs 0–8), bo to dwie różne liczby.
-3. `kwalifikacja_leada.scoring_0_8` (ten rozdział) — szansa sprzedaży (A/B/C/D).
+2. `score_audytu_0_100` + `tier_audytu` — jakość/kompletność strony pod kątem konwersji (8 wymiarów niżej). To NIE jest prawdopodobieństwo zakupu — nigdy nie pisz gołego „score" bez podania skali (0–100 vs 0–6), bo to dwie różne liczby.
+3. `kwalifikacja_leada.scoring_0_6` (ten rozdział) — szansa sprzedaży (trzy wymiary, po nazwach).
 
-**Niski `score_audytu_0_100` NIE oznacza automatycznie dobrego leada** — strona może być słaba technicznie, a kancelaria mimo to nie mieć budżetu ani powodu do kontaktu (0–4/8). I odwrotnie: solidna strona (score 70+) może mieć jeden bardzo konkretny, świeży powód do kontaktu i wysoki scoring 0–8.
+**Niski `score_audytu_0_100` NIE oznacza automatycznie dobrego leada** — strona może być słaba technicznie i nie dawać żadnego powodu do kontaktu (0–2/6). I odwrotnie: solidna strona (score 70+) może mieć jeden bardzo konkretny, świeży powód do kontaktu i wysoki scoring 0–6.
 
 **Podział odpowiedzialności (patrz SKILL.md → Krok 6):** Claude kończy na kwalifikacji i krótkiej, faktograficznej `obserwacja_do_maila` — nie pisze tematu ani treści maila M1/FU1/FU2, nie tworzy szkicu Gmail, nie wysyła i nie aktualizuje Trackera. To robi druga automatyzacja (ChatGPT) po przejęciu rekordu z zakładki `Claude_import`. Kanoniczny szablon pól: `reference/schemat-audyt-dane.json`; walidacja przed przekazaniem dalej: `node scripts/validate-lead.js <domena>`.
 
-**Pytanie przewodnie:** czy właściciel tej kancelarii ma widoczny, biznesowo uzasadniony powód,
-żeby zapłacić **4 500–6 500 zł** za nową stronę?
+**Pytanie przewodnie:** czy właściciel tej kancelarii, patrząc na własną stronę, może uznać,
+że przestała go reprezentować — i czy mamy o czym z nim zacząć rozmowę?
+
+**Czego tu NIE oceniamy: czy go stać.** Wymiar „potencjał finansowy" został usunięty ze skali
+2026-08-30 decyzją właściciela produktu — nie zgadujemy budżetu ze strony, wielkości zespołu ani
+liczby opinii. Jednoosobowa praktyka jest tak samo dobrym leadem jak spółka; o tym, czy kogoś stać,
+rozstrzyga rozmowa, a nie audyt. Jeśli w uzasadnieniu pojawia się „mała kancelaria", „solo",
+„brak zespołu", „brak sygnałów budżetu" — to jest błąd oceny, nie argument.
 
 Nie szukamy dowolnych błędów. Strona nie dostaje wysokiej oceny za to, że wygląda staro —
 `priorytet_wizualny` z Kroku 0 jest **materiałem** do wymiaru A, a nie samym A.
@@ -102,137 +108,89 @@ pole puste w danych to „nie wiem", nie „nie ma".
 
 ### Wymiary
 
-| | Wymiar | 0 | 1 | 2 |
+| Wymiar | klucz w JSON | 0 | 1 | 2 |
 |---|---|---|---|---|
-| **A** | **Potrzeba przebudowy** | tylko kosmetyka | widoczne niedoskonałości | wyraźna potrzeba nowej strony |
-| **B** | **Potencjał finansowy** | brak jakichkolwiek sygnałów, że ktoś tu wydaje pieniądze na obecność | działająca praktyka bez widocznych wydatków na markę | co najmniej jeden konkretny wydatek na obecność: własny lokal, płatna akwizycja, obsługa firm, rekrutacja, płatne narzędzia na stronie, kilka lokalizacji, długi staż |
-| **C** | **Skala możliwej poprawy** | niewielka | umiarkowana | duża i łatwa do pokazania |
-| **D** | **Naturalny powód do kontaktu** | trzeba go wymyślać | istnieje, ale przeciętny | konkretny, prawdziwy i charakterystyczny |
+| **Potrzeba przebudowy** | `potrzeba_przebudowy` | tylko kosmetyka | widoczne niedoskonałości | wyraźna potrzeba nowej strony |
+| **Skala możliwej poprawy** | `skala_poprawy` | niewielka | umiarkowana | duża i łatwa do pokazania w jednym zdaniu |
+| **Powód do kontaktu** | `naturalny_powod_kontaktu` | trzeba go wymyślać | istnieje, ale przeciętny | konkretny, prawdziwy i charakterystyczny |
+
+Wymiary nie mają już liter — po usunięciu „potencjału finansowego" dawne A/C/D zostałyby z dziurą
+w środku albo z przenumerowaniem, które myli się ze starymi rekordami. W `audyt-dane.json`
+i w uzasadnieniach używaj nazw kluczy z tabeli.
 
 Skąd brać dane do każdego wymiaru:
 
 | Wymiar | Główne źródło | Uwaga |
 |---|---|---|
-| A | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ A2, `sredni` ≈ A1, `niski` ≈ A0. To punkt wyjścia, nie automat |
-| B | wydatki widoczne w treści i profilu: własne biuro, staż, płatna akwizycja, rekrutacja, obsługa firm, płatne narzędzia (płatności online, rezerwacja terminu), `teamPage.locationCount` | **`teamPage.lawyerCount` NIE jest tu kryterium — patrz „Wielkość zespołu" niżej.** Poza tym najsłabiej widoczny wymiar — bez `teamPage` częściej będzie 0/1 niż realne 2. `lead-info.json` → `google_maps` (`totalScore`, `reviewsCount`) to sygnał **pomocniczy** — dużo opinii/wysoka ocena mogą wskazywać ugruntowaną kancelarię, ale to KONTEKST biznesowy, nie dowód budżetu; nigdy nie podbijaj B samym Google Maps bez potwierdzenia z `teamPage`/`servicesPage` — **z wyjątkiem klauzuli braku dowodu, patrz niżej** |
-| C | różnica między tym, czym kancelaria jest (B), a tym, co pokazuje strona (A) | „łatwa do pokazania" = dasz się to opisać w jednym zdaniu maila |
-| D | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1 |
+| Potrzeba przebudowy | `priorytet_wizualny` (Krok 0) + `ageSignals` + `vitals.mobileFriendly` | `wysoki` ≈ 2, `sredni` ≈ 1, `niski` ≈ 0. To punkt wyjścia, nie automat |
+| Skala poprawy | różnica między tym, co strona pokazuje dziś, a tym, co widać na niej do naprawienia — zrzuty, `servicesPage`, `vitals` | „łatwa do pokazania" = da się to opisać w jednym zdaniu maila. **Nie mierz jej wielkością kancelarii** — pusta podstrona oferty u adwokata solo jest tak samo dużą poprawą jak u spółki |
+| Powód do kontaktu | `newsPage.lastPostDate`, konkretny błąd ze zrzutu, `servicesPage` vs hero | jeśli powód brzmi jak szablon — to jest 0, nie 1. Gdy `content.jakoscTresci.podejrzana` = true, brak daty nie jest dowodem braku powodu — to brak danych |
 
-**A i C są skorelowane** (duża potrzeba ≈ duża poprawa) — to normalne i zamierzone. Praktyczny
-skutek: 7 pkt oznacza w praktyce A2 + C2 + B2 + D≥1, czyli **rozbudowaną kancelarię ze słabą
-stroną**. Spodziewaj się kilku procent trafień na paczkę.
+**Potrzeba przebudowy i skala poprawy są skorelowane** (duża potrzeba ≈ duża poprawa) — to
+normalne i zamierzone. Praktyczny skutek: 5–6 pkt oznacza stronę wyraźnie słabą wizualnie,
+z poprawą, którą da się nazwać jednym zdaniem, i z jakimś prawdziwym hakiem.
 
-**Skala 0–8 nie ma czterech niezależnych wymiarów — ma trzy.** A i C mierzą w praktyce tę samą
-obserwację (stan strony wobec stanu kancelarii) i dają razem do 4 z 8 punktów, więc pozorna
-granularność skali jest wyższa niż realna. Niezależne osie to: **potrzeba (A+C) · pieniądze (B) ·
-hak (D)**. Pamiętaj o tym, czytając sumę — 6/8 zbudowane z A2+C2+B1+D1 to zupełnie inny przypadek
-niż 6/8 z A1+C1+B2+D2, mimo identycznej liczby.
+**Skala 0–6 ma dwie niezależne osie, nie trzy:** potrzeba (przebudowa + poprawa, razem do 4) oraz
+hak (do 2). Pamiętaj o tym, czytając sumę — 5/6 z rozbicia 2+2+1 to inny przypadek niż 2+1+2,
+mimo identycznej liczby.
 
 ---
 
-### Wielkość zespołu nie jest kryterium B
+### Klauzula zepsutej strony (gdy nie ma czego czytać)
 
-**Decyzja właściciela produktu, 2026-08-30.** Jednoosobowa kancelaria **nie jest gorszym leadem** —
-`teamPage.lawyerCount = 1` (albo brak `teamPage`) nie obniża B i nigdy nie jest samodzielnym
-uzasadnieniem oceny. Adwokat prowadzący praktykę solo od kilkunastu lat, z własnym biurem i
-płatnym pozycjonowaniem, ma budżet na stronę; kancelaria z pięcioma nazwiskami na podstronie
-może go nie mieć.
+**Problem, który ta klauzula naprawia:** oceniamy kancelarię na podstawie artefaktu, który sami
+uznaliśmy za zepsuty. Im gorsza strona, tym mniej danych — a brak danych łatwo pomylić z brakiem
+powodu do kontaktu. Zweryfikowane 2026-08-30: `adwokat-kalczuga.pl` zwrócił ze scrape'a stronę
+„400 Bad Request", `adwokat-panczyk.pl` pięć słów — oba dostały „powód do kontaktu = 0" nie
+dlatego, że powodu nie było, tylko dlatego, że nie było czego czytać.
 
-**Powód zmiany:** na paczce 15 stron `priorytet_wizualny: wysoki` (Sosnowiec, Częstochowa, Zabrze,
-Dąbrowa Górnicza) średnie B wyniosło 1,07 przy średnim A 1,53. Jedenaście z piętnastu firm dostało
-B=0–1, a w uzasadnieniach wracała ta sama formuła: „solo praktyka bez sygnałów skali". Wymiar B
-nie mierzył wtedy budżetu — mierzył liczbę prawników, czyli rzecz, która z budżetem nie musi mieć
-związku. Siedem firm utknęło przez to na 5–6/8 mimo wyraźnie starej strony.
+**Reguła:** jeśli `content.jakoscTresci.podejrzana` = true albo strona jest skrajnie uboga (brak
+`servicesPage` i `newsPage` dlatego, że nie ma czego czytać) — **oceniaj wyłącznie ze zrzutów**
+i napisz w uzasadnieniu wprost, że zastosowano tę klauzulę. Sam stan strony (pusta, zepsuta, jedno
+zdjęcie i łacińska sentencja) jest wtedy pełnoprawnym powodem do kontaktu, bo to jest dokładnie to,
+co zobaczy odwiedzający.
 
-**Czym B jest zamiast tego:** pytaniem „czy ta kancelaria wydaje pieniądze na swoją obecność?".
-Każdy z poniższych to konkretny wydatek i wystarcza na B=2, jeśli jest widoczny w danych:
-- własny lokal/biuro (adres inny niż mieszkanie, zdjęcie wnętrza kancelarii)
-- płatna akwizycja klientów (Google Ads, pozycjonowanie, płatne wizytówki w katalogach)
-- obsługa firm / stała obsługa prawna wymieniona w ofercie
-- rekrutacja (nabór aplikanta, ogłoszenie o pracę) — ktoś planuje rosnąć
-- płatne narzędzia na stronie (płatności online, system rezerwacji terminu, chat)
-- kilka lokalizacji lub kilka wizytówek Google
-- długi staż praktyki (≥10 lat) przy utrzymywanej, opłacanej domenie
-
-B=0 zostaw dla sytuacji, w której naprawdę nic nie wskazuje na wydatki: darmowa platforma,
-brak własnej domeny, brak jakiegokolwiek śladu płatnej obecności.
-
-**Czego nie wolno napisać w `uzasadnienie` wymiaru B:** „kancelaria jednoosobowa", „solo praktyka",
-„brak zespołu", „brak sygnałów skali" — jako powodu obniżenia oceny. Jeśli obniżasz B, napisz,
-jakiego **wydatku** zabrakło, nie ilu ludzi.
-
-**Priorytet przy sprzeczności:** najważniejszy sygnał to stan wizualny strony (Krok 0). Jeśli
-strona jest wyraźnie słaba wizualnie, a B jest niepewne — dokumentuj niepewność w `uzasadnienie`,
-nie karz nią leada.
-
-### Klauzula braku dowodu (B przy nieobecnej lub zepsutej stronie)
-
-**Problem, który ta klauzula naprawia:** B czerpie dowody ze strony internetowej (`teamPage`,
-`servicesPage`), czyli z tego samego artefaktu, który oceniamy. Im gorsza strona, tym mniej
-dowodów na B — a ponieważ w praktyce **B jest bramką całej kwalifikacji** (bez B2 prawie nic nie
-dobija do 7), system systematycznie odrzucał najlepszych kandydatów: firmy, których strona jest
-tak słaba, że ukrywa ich realną wielkość. Zweryfikowane empirycznie na paczkach Katowice+Gliwice:
-spośród leadów z A2 tylko te, u których dowód na B **przetrwał poza stroną**, dobiły do B2.
-
-**Reguła:** jeśli `priorytet_wizualny` = `wysoki` **z powodu braku strony, jej awarii albo
-skrajnego ubóstwa treści** (brak `teamPage` i `servicesPage` nie dlatego, że kancelaria jest mała,
-tylko dlatego, że nie ma czego czytać) — oceniaj B **wyłącznie z dowodów pozastronowych**.
-Standardowy zakaz „nie podbijaj B samym Google Maps" **nie obowiązuje**, bo nie istnieje
-alternatywne źródło, którego miałby wymagać.
-
-Dowody pozastronowe dopuszczalne w tym trybie:
-- `google_maps.reviewsCount` + `totalScore` — wysoka liczba opinii przy dobrej ocenie to realny,
-  długo budowany strumień klientów
-- **płatna akwizycja klientów** (patrz „Mocne sygnały" niżej)
-- weryfikacja rejestrowa (GUS, „Sprawdzona Firma" i podobne znaki na portalach)
-- staż działalności podany w profilu zewnętrznym
-- liczba lokalizacji wynikająca z wizytówek Google, nie ze strony
-
-W `uzasadnienie` wymiaru B **zawsze napisz wprost, że zastosowano klauzulę braku dowodu** i z czego
-konkretnie oceniłeś B — żeby przy audycie decyzji było widać, że to nie było podbicie na siłę.
+Czego **nie** wolno w tym trybie: dopisywać faktów, których nie widać na zrzucie (dat, nazwisk,
+liczby prawników), ani traktować pustego pola w `content.json` jako ustalenia.
 
 ### Werdykt
 
 | Suma | `decyzja` | Co robimy |
 |---|---|---|
-| **7–8** | `PISAĆ` | rodzynek → zapis do `Claude_import` |
-| 5–6 | — | **nie zapisujemy do arkusza**; loguj lokalnie w `output/odrzucone.csv`, żeby nie audytować drugi raz |
-| 0–4 | `ODPUŚCIĆ` | tylko log lokalny |
+| **5–6** | `PISAĆ` | rodzynek → zapis do `Claude_import` |
+| 3–4 | — | **nie zapisujemy do arkusza**; loguj lokalnie w `output/odrzucone.csv`, żeby nie audytować drugi raz |
+| 0–2 | `ODPUŚCIĆ` | tylko log lokalny |
 
-**Próg 7 zostaje twardy — nie ma ścieżki omijającej B.** Rozważana była reguła „6 punktów przy
-A2+C2 kwalifikuje mimo B1", ale została odrzucona świadomie: po zastosowaniu klauzuli braku dowodu
-B1 oznacza już „sprawdziliśmy wszystkie dostępne źródła i to jest realnie mała kancelaria" — a to
-jest dokładnie ten przypadek, który wymiar B ma odsiewać przy produkcie za 4 500–6 500 zł.
-Właściwą naprawą zaniżonego B jest klauzula braku dowodu (uzupełnia brakujące dane), nie obniżenie
-progu (ignoruje dane prawdziwe). Próg 7–8 jest też zakodowany w `validate-lead.js`,
-`push-import.js` i `sheets/Code.gs` — zmiana wymagałaby ręcznego przewdrożenia webhooka Apps
-Script.
+**Skala zmieniona 2026-08-30 z 0–8 na 0–6** (decyzja właściciela produktu): wymiar „potencjał
+finansowy" został usunięty w całości, bo zgadywanie budżetu ze strony odsiewało dokładnie te
+kancelarie, po które sięgamy — jednoosobowe praktyki z wyraźnie starą stroną. Poprzednia wersja
+tego rozdziału broniła progu 7/8 argumentem, że bez dowodu na pieniądze lead nie ma sensu; ten
+argument już nie obowiązuje.
 
-Format zapisu pod werdyktem — zawsze z rozbiciem, bo z niego widać, czy 7 nie powstało z natęgi:
+Próg 5 jest zakodowany w `validate-lead.js`, `push-import.js`, `log-odrzucone.js` i
+`sheets/Code.gs`. **Rekordy w starym schemacie (`scoring_0_8`) zostają jak są** — walidator
+oznacza je jako stary schemat i nie przelicza; automatycznego przeliczenia 0–8 → 0–6 nie ma,
+bo dawne B nie ma odpowiednika w nowej skali.
+
+Format zapisu pod werdyktem — zawsze z rozbiciem, bo z niego widać, czy 5 nie powstało z natęgi:
 
 ```
-Ocena leada: 7/8 → PISAĆ
-A. Potrzeba przebudowy:   2  (Google Sites, brak mobile)
-B. Potencjał finansowy:   2  (4 prawników, obsługa firm, 2 lokalizacje)
-C. Skala poprawy:         2  (zespół i oferta w ogóle niewidoczne)
-D. Powód do kontaktu:     1  (ostatni wpis 2019 — prawdziwy, ale przeciętny)
+Ocena leada: 5/6 → PISAĆ
+Potrzeba przebudowy:  2  (teksturowane tło, zakładki sprzed 2012, brak wersji mobilnej)
+Skala poprawy:        2  (podstrona „Oferta" pusta, usługi tylko na stronie głównej)
+Powód do kontaktu:    1  (baner cookies zasłania kontakt na telefonie — prawdziwy, ale przeciętny)
 ```
 
-### Mocne sygnały (podbijają B i C)
+### Mocne sygnały (podbijają skalę poprawy i powód do kontaktu)
 
-Rozbudowana kancelaria z bardzo słabą witryną · strona wyraźnie odstaje od poziomu kancelarii ·
-istotne usługi trudne do znalezienia · realne błędy techniczne · strona źle działa na telefonie ·
+Strona wyraźnie odstaje od tego, jak kancelaria się opisuje · istotne usługi trudne do znalezienia ·
+realne błędy techniczne widoczne dla odwiedzającego · strona źle działa na telefonie ·
 profesjonalne zdjęcia lub identyfikacja zmarnowane przez słaby projekt · nieczytelna prezentacja
-zespołu lub specjalizacji · kancelaria obsługuje firmy / ma zespół / kilka lokalizacji, ale strona
-tego nie komunikuje.
+specjalizacji · treść, która urywa się kilka lat temu.
 
-**Płatna akwizycja klientów — mocny sygnał B.** Obecność w płatnym katalogu/marketplace leadów
-(Oferteo, Fixly, płatne wizytówki branżowe), widoczne reklamy Google Ads, opłacone pozycjonowanie.
-To **bezpośredni dowód, że kancelaria wydaje pieniądze na pozyskiwanie klientów** — mocniejszy
-predyktor budżetu na stronę niż wielkość zespołu, bo dotyczy wprost gotowości do płacenia za
-akwizycję, a nie tylko skali działalności. Szczególnie ważne przy klauzuli braku dowodu: firma bez
-własnej strony, która płaci za leady w katalogu, ma **potwierdzony budżet marketingowy i brak
-produktu, na który mogłaby go kierować**.
+**Sygnały o wielkości i budżecie kancelarii nie należą już do tej listy** — liczba prawników,
+obsługa firm, płatna akwizycja czy liczba opinii w Google to kontekst do rozmowy handlowej,
+nie punkty w kwalifikacji (patrz „Pytanie przewodnie" wyżej).
 
 ### Słabe sygnały — NIE wystarczają (to jest `co_jest_kosmetyka`)
 
@@ -250,12 +208,12 @@ Strona niedostępna albo widziałeś tylko fragment → **nie oznaczaj jako PISA
 `OCENA WSTĘPNA — ZA MAŁO DANYCH`. Nie uzupełniaj pól przypuszczeniami i nie wymyślaj danych
 kontaktowych — puste pole jest lepsze niż zgadnięte.
 
-**Nie myl „braku danych" z „klauzulą braku dowodu" (wyżej)** — to dwie różne sytuacje:
+**Nie myl „braku danych" z „klauzulą zepsutej strony" (wyżej)** — to dwie różne sytuacje:
 
 | | Co się stało | Werdykt |
 |---|---|---|
 | **Brak danych** | *nie wiemy, co tam jest* — scrape padł, timeout, błąd certyfikatu, zawieszone konto hostingu, widzieliśmy tylko fragment | `OCENA WSTĘPNA — ZA MAŁO DANYCH`, nie oceniaj, nie zapisuj nigdzie |
-| **Klauzula braku dowodu** | *wiemy, i to jest właśnie ustalenie* — potwierdziliśmy, że kancelaria nie ma własnej strony (jest tylko profil w katalogu), strona działa, ale jest skrajnie uboga, albo działa z trwale zepsutymi podstronami | normalna kwalifikacja, B z dowodów pozastronowych |
+| **Klauzula zepsutej strony** | *wiemy, i to jest właśnie ustalenie* — potwierdziliśmy, że kancelaria nie ma własnej strony (jest tylko profil w katalogu), strona działa, ale jest skrajnie uboga, albo działa z trwale zepsutymi podstronami | normalna kwalifikacja, wyłącznie ze zrzutów |
 
 Test rozstrzygający: **czy potrafisz napisać zdanie o tym, co odwiedzający realnie zobaczy?**
 Jeśli tak („trafia na profil w Oferteo zamiast na stronę kancelarii") — to ustalenie, oceniaj

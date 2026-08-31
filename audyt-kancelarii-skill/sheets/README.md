@@ -86,6 +86,6 @@ Lead bez **żadnego** klucza nie jest zapisywany — wraca w raporcie jako `bez_
 
 ## Co skrypt odrzuca sam
 
-- `scoring_0_8` spoza 7–8 (parsuje też format tekstowy `„7/8"`, którego używa Tracker)
+- `scoring_0_6` spoza 5–6 (parsuje też format tekstowy `„5/6"`, którego używa Tracker)
 - `decyzja` inna niż `PISAĆ`
 - duplikaty — także w obrębie jednej paczki

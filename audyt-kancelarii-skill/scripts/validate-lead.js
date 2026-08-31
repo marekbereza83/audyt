@@ -21,7 +21,7 @@
  *
  * Reguły (kryteria-audytu.md → „Ocena leada" + polityka: import TYLKO dla 7–8/8):
  *   1.  punkty A/B/C/D — liczby całkowite 0–2
- *   2.  razem = A+B+C+D
+ *   2.  razem = suma trzech wymiarów (0–6)
  *   3.  decyzja zgodna z progami: 7–8 → PISAĆ; 0–6 → ODPUŚCIĆ (5–6 loguj przez log-odrzucone.js)
  *   4.  PISAĆ wymaga ≥2 mocnych przesłanek
  *   5.  ODPUŚCIĆ → przekazanie.do_importu=false, obserwacja_do_maila=null, status ODPUŚCIĆ
@@ -90,9 +90,19 @@ function validateDir(dir) {
     return { schemat: 'stary', errors, warnings };
   }
 
+  // Skala 0–8 (sprzed 2026-08-30, z wymiarem „potencjał finansowy") — też stary schemat.
+  // Nie przeliczamy jej na 0–6: dawne B nie ma odpowiednika, a zgadywanie sumy wstecz
+  // dałoby decyzje, których nikt nie podjął. Taki rekord wymaga ponownej kwalifikacji.
+  if (!d.kwalifikacja_leada.scoring_0_6 && d.kwalifikacja_leada.scoring_0_8) {
+    warnings.push('stary schemat (scoring_0_8, skala sprzed 2026-08-30) — do ponownej kwalifikacji');
+    return { schemat: 'stary', errors, warnings };
+  }
+
   const k = d.kwalifikacja_leada;
-  const s = k.scoring_0_8 || {};
-  const czesci = ['potrzeba_przebudowy', 'potencjal_finansowy', 'skala_poprawy', 'naturalny_powod_kontaktu'];
+  // Skala 0–6 od 2026-08-30 (bez wymiaru „potencjał finansowy"). Rekordy z samym
+  // scoring_0_8 są traktowane jak stary schemat — patrz wyżej, nie przeliczamy ich.
+  const s = k.scoring_0_6 || {};
+  const czesci = ['potrzeba_przebudowy', 'skala_poprawy', 'naturalny_powod_kontaktu'];
   const priorytetWiz = d.priorytet_wizualny || (d.ocenaWizualna && d.ocenaWizualna.priorytet) || null;
 
   // lead-info.json (opcjonalny — tryb pojedynczy go nie tworzy)
@@ -109,18 +119,18 @@ function validateDir(dir) {
   for (const c of czesci) {
     const p = s[c] ? s[c].punkty : undefined;
     if (!Number.isInteger(p) || p < 0 || p > 2) {
-      errors.push(`scoring_0_8.${c}.punkty musi być liczbą całkowitą 0–2 (jest: ${JSON.stringify(p)})`);
+      errors.push(`scoring_0_6.${c}.punkty musi być liczbą całkowitą 0–2 (jest: ${JSON.stringify(p)})`);
     } else {
       suma += p;
     }
     if (s[c] && !String(s[c].uzasadnienie || '').trim()) {
-      warnings.push(`scoring_0_8.${c} bez uzasadnienia — punkt bez podstawy nie obroni się przy weryfikacji`);
+      warnings.push(`scoring_0_6.${c} bez uzasadnienia — punkt bez podstawy nie obroni się przy weryfikacji`);
     }
   }
 
   // 2. razem = suma
   if (s.razem !== suma) {
-    errors.push(`scoring_0_8.razem (${s.razem}) ≠ suma A+B+C+D (${suma})`);
+    errors.push(`scoring_0_6.razem (${s.razem}) ≠ suma trzech wymiarów (${suma})`);
   }
 
   // pewnosc_oceny
@@ -137,13 +147,13 @@ function validateDir(dir) {
       errors.push('ocena wstępna nie może mieć przekazania do importu ani obserwacji');
     }
   } else {
-    // 3. decyzja zgodna z progami (polityka: PISAĆ tylko 7–8; 0–6 → ODPUŚCIĆ)
+    // 3. decyzja zgodna z progami (polityka: PISAĆ tylko 5–6; 0–4 → ODPUŚCIĆ)
     if (!DECYZJE.includes(k.decyzja)) {
       errors.push(`decyzja musi być PISAĆ albo ODPUŚCIĆ (jest: ${JSON.stringify(k.decyzja)})`);
     } else {
-      const oczekiwana = suma >= 7 ? 'PISAĆ' : 'ODPUŚCIĆ';
+      const oczekiwana = suma >= 5 ? 'PISAĆ' : 'ODPUŚCIĆ';
       if (k.decyzja !== oczekiwana) {
-        errors.push(`decyzja ${k.decyzja} niezgodna z progami dla ${suma}/8 (oczekiwana: ${oczekiwana})`);
+        errors.push(`decyzja ${k.decyzja} niezgodna z progami dla ${suma}/6 (oczekiwana: ${oczekiwana})`);
       }
     }
 

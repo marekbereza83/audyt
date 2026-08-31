@@ -52,7 +52,7 @@ Drugi argument (konkurent) jest opcjonalny. Gdy podany, scraper zapisze dodatkow
 
 Każda rekomendacja w raporcie ma oznaczenie **wysiłek → efekt** (np. „HTTPS → 1 wieczór, efekt natychmiastowy") wg „Mapy wysiłek/efekt" w `reference/kryteria-audytu.md`; tanie poprawki o wysokim efekcie są listowane pierwsze.
 
-**Kwalifikacja leada (Krok 5) i obserwacja do maila.** Osobno od score konwersji Claude ocenia, czy ta konkretna kancelaria to szansa sprzedaży (4 wymiary A/B/C/D, suma 0–8 → `PISAĆ`/`ODPUŚCIĆ`, patrz `reference/kryteria-audytu.md` → „Ocena leada"). **Tylko dla `PISAĆ` (7–8/8) bez blokady kontaktu** audyt zapisuje `mail-observation.txt` — krótki, faktograficzny hak + jedno pytanie otwarte. To materiał wejściowy dla drugiej automatyzacji (ChatGPT), nie gotowy mail: **Claude nie pisze tematu ani treści maila i nie wysyła niczego** (`SKILL.md` → Krok 6).
+**Kwalifikacja leada (Krok 5) i obserwacja do maila.** Osobno od score konwersji Claude ocenia, czy ta konkretna kancelaria to szansa sprzedaży (3 wymiary, suma 0–6 → `PISAĆ`/`ODPUŚCIĆ`, patrz `reference/kryteria-audytu.md` → „Ocena leada"). **Tylko dla `PISAĆ` (5–6/6) bez blokady kontaktu** audyt zapisuje `mail-observation.txt` — krótki, faktograficzny hak + jedno pytanie otwarte. To materiał wejściowy dla drugiej automatyzacji (ChatGPT), nie gotowy mail: **Claude nie pisze tematu ani treści maila i nie wysyła niczego** (`SKILL.md` → Krok 6).
 
 ### Tryb wsadowy (cała lista z trackera)
 
@@ -66,11 +66,11 @@ node scrape.js --batch lista.csv
 # 3. Zbiorczy raport lokalny
 node batch-report.js lista.csv          # → output/batch-leady.csv (główny raport)
 
-# 4. Rodzynki 7–8/8 (PISAĆ) do arkusza Claude_import (status_importu: NOWY)
+# 4. Rodzynki 5–6/6 (PISAĆ) do arkusza Claude_import (status_importu: NOWY)
 node push-import.js leady.json
 ```
 
-`batch-leady.csv` (BOM UTF-8 + CRLF, separator `;` — Excel otworzy polskie znaki) ma m.in. kolumny `decyzja`, `scoring_0_8`, `obserwacja_do_maila`, `status_sugerowany`, `score_audytu_0_100`, `tier_audytu`, `pewnosc_oceny`, `mocne_przeslanki`, `co_jest_kosmetyka`. Sortowanie: `PISAĆ` → `ODPUŚCIĆ` → wstępne/do ponownego audytu; w ramach decyzji scoring malejąco. Obok powstają `batch-pominiete.csv` (blokady, duplikaty, firmy zamknięte, zły URL) i `batch-nieudane.csv` (nieudane scrapy — do ręcznej weryfikacji, batch nie ponawia). `batch-fragments.csv` zostaje jako zgodność wsteczna, nie jest już głównym wynikiem.
+`batch-leady.csv` (BOM UTF-8 + CRLF, separator `;` — Excel otworzy polskie znaki) ma m.in. kolumny `decyzja`, `scoring_0_6`, `obserwacja_do_maila`, `status_sugerowany`, `score_audytu_0_100`, `tier_audytu`, `pewnosc_oceny`, `mocne_przeslanki`, `co_jest_kosmetyka`. Sortowanie: `PISAĆ` → `ODPUŚCIĆ` → wstępne/do ponownego audytu; w ramach decyzji scoring malejąco. Obok powstają `batch-pominiete.csv` (blokady, duplikaty, firmy zamknięte, zły URL) i `batch-nieudane.csv` (nieudane scrapy — do ręcznej weryfikacji, batch nie ponawia). `batch-fragments.csv` zostaje jako zgodność wsteczna, nie jest już głównym wynikiem.
 
 **Jak wyeksportować `lista.csv` z trackera Excel:**
 1. W trackerze zostaw tylko dwie kolumny: **Nazwa** (kol. B) i **Strona www** (kol. D). Najprościej: nowy arkusz z nagłówkiem `nazwa,url` i formułą `=Tracker!B2` / `=Tracker!D2` w dół, potem skopiuj jako wartości.
@@ -95,7 +95,7 @@ audyt-kancelarii/
     ├── csv-utils.js                  ← wspólny parser CSV (legacy/rozszerzony) + normalizacja/dedup
     ├── batch-report.js               ← zbiera wyniki batcha → output/batch-leady.csv
     ├── validate-lead.js              ← waliduje audyt-dane.json przed przekazaniem dalej
-    ├── push-import.js                ← wysyła rodzynki 7–8/8 do zakładki Claude_import
+    ├── push-import.js                ← wysyła rodzynki 5–6/6 do zakładki Claude_import
     ├── log-odrzucone.js              ← loguje lokalnie leady 5–6/8 (nie audytować drugi raz)
     └── package.json
 ```

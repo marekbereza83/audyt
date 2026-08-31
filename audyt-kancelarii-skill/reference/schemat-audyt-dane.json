@@ -1,5 +1,5 @@
 {
-  "_komentarz": "KANONICZNY SZABLON audyt-dane.json — kopiuj i wypełniaj przy każdym audycie. Trzy NIEZALEŻNE warstwy: (1) priorytet_wizualny — jak strona wygląda (Krok 0, nie wchodzi do score), (2) score_audytu_0_100 — jakość/kompletność strony (8 wymiarów; NIE prawdopodobieństwo zakupu), (3) kwalifikacja_leada.scoring_0_8 — szansa sprzedaży (A/B/C/D). Niski score 0-100 NIE oznacza automatycznie dobrego leada. PODZIAŁ ODPOWIEDZIALNOŚCI: Claude kończy na kwalifikacji + `przekazanie.obserwacja_do_maila` (krótki fakt, NIE temat/treść maila) — pełny mail M1, dedup finalny i szkic Gmail robi ChatGPT po przejęciu rekordu z zakładki `Claude_import`. Walidacja: node scripts/validate-lead.js <domena>.",
+  "_komentarz": "KANONICZNY SZABLON audyt-dane.json — kopiuj i wypełniaj przy każdym audycie. Trzy NIEZALEŻNE warstwy: (1) priorytet_wizualny — jak strona wygląda (Krok 0, nie wchodzi do score), (2) score_audytu_0_100 — jakość/kompletność strony (8 wymiarów; NIE prawdopodobieństwo zakupu), (3) kwalifikacja_leada.scoring_0_6 — szansa sprzedazy (trzy wymiary po nazwach; wymiar \"potencjal finansowy\" usuniety 2026-08-30 — nie zgadujemy budzetu ze strony). Niski score 0-100 NIE oznacza automatycznie dobrego leada. PODZIAŁ ODPOWIEDZIALNOŚCI: Claude kończy na kwalifikacji + `przekazanie.obserwacja_do_maila` (krótki fakt, NIE temat/treść maila) — pełny mail M1, dedup finalny i szkic Gmail robi ChatGPT po przejęciu rekordu z zakładki `Claude_import`. Walidacja: node scripts/validate-lead.js <domena>.",
 
   "lead_id": null,
   "nazwa": "",
@@ -29,15 +29,14 @@
 
   "kwalifikacja_leada": {
     "decyzja": "PISAĆ | ODPUŚCIĆ (null gdy pewnosc_oceny != pelna)",
-    "scoring_0_8": {
-      "potrzeba_przebudowy": { "punkty": 0, "uzasadnienie": "wymiar A — z priorytet_wizualny + ageSignals + mobile" },
-      "potencjal_finansowy": { "punkty": 0, "uzasadnienie": "wymiar B — z teamPage + servicesPage + Google Maps (kontekst, nie dowód)" },
-      "skala_poprawy": { "punkty": 0, "uzasadnienie": "wymiar C — różnica między tym, czym kancelaria jest (B), a co pokazuje strona (A)" },
-      "naturalny_powod_kontaktu": { "punkty": 0, "uzasadnienie": "wymiar D — z newsPage.lastPostDate / konkretnego błędu ze zrzutu" },
+    "scoring_0_6": {
+      "potrzeba_przebudowy": { "punkty": 0, "uzasadnienie": "z priorytet_wizualny + ageSignals + mobile" },
+      "skala_poprawy": { "punkty": 0, "uzasadnienie": "ile da się na tej stronie widocznie poprawić i czy da się to opisać jednym zdaniem" },
+      "naturalny_powod_kontaktu": { "punkty": 0, "uzasadnienie": "z newsPage.lastPostDate / konkretnego błędu ze zrzutu" },
       "razem": 0
     },
     "glowny_problem": "jedno zdanie/fraza — największy problem uzasadniający ALBO podważający potrzebę nowej strony; nie lista braków",
-    "powod_biznesowy": "1-2 zdania: co właściciel realnie zyska, albo dlaczego 4500-6500 zł nie jest teraz uzasadnione; bez obietnic wzrostu sprzedaży",
+    "powod_biznesowy": "1-2 zdania: co właściciel realnie zyska, albo dlaczego nowa strona nie jest teraz uzasadniona; bez obietnic wzrostu sprzedaży",
     "mocne_przeslanki": [],
     "co_jest_kosmetyka": [],
     "sprawdzone_podstrony": [],

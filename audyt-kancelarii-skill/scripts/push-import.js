@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * push-import.js — wysyła rodzynki (7–8/8, PISAĆ) do zakładki „Claude_import" w arkuszu.
+ * push-import.js — wysyła rodzynki (5–6/6, PISAĆ) do zakładki „Claude_import" w arkuszu.
  *
  * Użycie:
  *   node push-import.js <leady.json>      wyślij
@@ -13,15 +13,15 @@
  *   [{
  *     "Nazwa kancelarii": "...", "Miasto": "...", "Strona www": "https://...",
  *     "Telefon": "+48 ...", "Email": "...", "priorytet_wizualny": "wysoki",
- *     "decyzja": "PISAĆ", "scoring_0_8": "7/8", "glowny_problem": "...",
+ *     "decyzja": "PISAĆ", "scoring_0_6": "5/6", "glowny_problem": "...",
  *     "obserwacja_do_maila": "...", "powod_biznesowy": "...",
  *     "zrodlo_audytu": "Claude", "data_audytu": "2026-07-16",
- *     "potrzeba_0_2": 2, "potencjal_0_2": 2, "skala_poprawy_0_2": 2, "powod_kontaktu_0_2": 1,
+ *     "potrzeba_0_2": 2, "skala_poprawy_0_2": 2, "powod_kontaktu_0_2": 1,
  *     "mocne_przeslanki": "fakt; fakt; fakt", "co_jest_kosmetyka": "...",
  *     "sprawdzone_podstrony": "https://...; https://...", "data_dodania": "2026-07-16"
  *   }]
  *
- * Dedup i filtr 7–8/8 robi skrypt po stronie arkusza (atomowo, pod blokadą) — tutaj
+ * Dedup i filtr 5–6/6 robi skrypt po stronie arkusza (atomowo, pod blokadą) — tutaj
  * tylko walidujemy kształt, żeby nie wysyłać oczywistych śmieci.
  *
  * Nie wysyłaj tematu ani treści maila (temat_M1/tresc_M1) — Claude kończy na
@@ -69,7 +69,7 @@ async function doPing() {
 }
 
 // ── walidacja wejścia ────────────────────────────────────────────────
-const WYMAGANE = ['Nazwa kancelarii', 'decyzja', 'scoring_0_8'];
+const WYMAGANE = ['Nazwa kancelarii', 'decyzja', 'scoring_0_6'];
 
 function sprawdz(leady) {
   const bledy = [];
@@ -77,14 +77,15 @@ function sprawdz(leady) {
     WYMAGANE.forEach(k => {
       if (!String(l[k] || '').trim()) bledy.push(`lead #${i + 1}: brak pola „${k}"`);
     });
-    const pkt = parseInt(String(l['scoring_0_8'] || '').match(/\d+/), 10);
-    if (!(pkt >= 7 && pkt <= 8)) {
-      bledy.push(`lead #${i + 1} (${l['Nazwa kancelarii']}): scoring ${l['scoring_0_8']} — do arkusza idą tylko 7–8/8`);
+    const pkt = parseInt(String(l['scoring_0_6'] || '').match(/\d+/), 10);
+    if (!(pkt >= 5 && pkt <= 6)) {
+      bledy.push(`lead #${i + 1} (${l['Nazwa kancelarii']}): scoring ${l['scoring_0_6']} — do arkusza idą tylko 5–6/6`);
     }
-    const suma = ['potrzeba_0_2', 'potencjal_0_2', 'skala_poprawy_0_2', 'powod_kontaktu_0_2']
+    // potencjal_0_2 zniknął ze skali 2026-08-30 — jeśli ktoś go jeszcze przyśle, jest ignorowany.
+    const suma = ['potrzeba_0_2', 'skala_poprawy_0_2', 'powod_kontaktu_0_2']
       .reduce((s, k) => s + (Number(l[k]) || 0), 0);
-    if (pkt >= 7 && suma !== pkt) {
-      bledy.push(`lead #${i + 1} (${l['Nazwa kancelarii']}): A+B+C+D = ${suma}, a scoring_0_8 = ${pkt}`);
+    if (pkt >= 5 && suma !== pkt) {
+      bledy.push(`lead #${i + 1} (${l['Nazwa kancelarii']}): suma wymiarów = ${suma}, a scoring_0_6 = ${pkt}`);
     }
   });
   return bledy;
@@ -109,7 +110,7 @@ async function wyslij(leady) {
   // Podsumowanie w formacie „TRYB PACZKI"
   console.log('');
   console.log(`Sprawdzonych kancelarii:      ${leady.length}`);
-  console.log(`Zapisanych rodzynków 7–8/8:   ${json.zapisane}`);
+  console.log(`Zapisanych rodzynków 5–6/6:   ${json.zapisane}`);
   console.log(`Duplikatów (pominiętych):     ${json.duplikaty}`);
   console.log(`Odrzuconych przez filtr:      ${json.odrzucone}`);
   console.log(`Do ręcznej weryfikacji:       ${json.bez_klucza}`);
@@ -146,7 +147,7 @@ async function wyslij(leady) {
 
   if (dryRun) {
     console.log(`--dry-run: ${leady.length} leadów przeszło walidację, nic nie wysłano.\n`);
-    leady.forEach(l => console.log(`  ${l['scoring_0_8']}  ${l['Nazwa kancelarii']} (${l['Miasto'] || '?'}) — ${l['Strona www'] || 'brak URL'}`));
+    leady.forEach(l => console.log(`  ${l['scoring_0_6']}  ${l['Nazwa kancelarii']} (${l['Miasto'] || '?'}) — ${l['Strona www'] || 'brak URL'}`));
     console.log('\nDedup sprawdzi arkusz przy realnej wysyłce.');
     return;
   }

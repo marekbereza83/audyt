@@ -42,5 +42,5 @@ zapłacić 4 500–6 500 zł za nową stronę — nie ogólnik typu „strona wy
 - Czy po odjęciu kosmetyki coś jeszcze zostaje? Jeśli nie — to nie jest lead, zmień na `ODPUŚCIĆ`.
 
 Dla `5–6` i `0–4`: bez obserwacji, bez zapisu do arkusza — `node scripts/log-odrzucone.js <domena>
-<scoring_0_8> "<powod>"`. Ten szablon nadal warto wypełnić lokalnie (dokumentuje decyzję), ale nie
+<scoring_0_6> "<powod>"`. Ten szablon nadal warto wypełnić lokalnie (dokumentuje decyzję), ale nie
 twórz `mail-observation.txt` ani nie wysyłaj przez `push-import.js`.

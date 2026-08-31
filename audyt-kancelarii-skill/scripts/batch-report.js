@@ -18,7 +18,7 @@
  *
  *   output/batch-leady.csv      — GŁÓWNY raport. Sortowanie: PISAĆ → ODPUŚCIĆ → wstępne/do
  *     ponownego audytu; w ramach decyzji scoring malejąco, potem potrzeba_przebudowy i
- *     potencjal_finansowy malejąco. NIE sortujemy leadów po score_audytu_0_100 — jakość
+ *     skala_poprawy malejąco. NIE sortujemy leadów po score_audytu_0_100 — jakość
  *     strony to nie jest prawdopodobieństwo zakupu.
  *
  *   output/batch-pominiete.csv  — rekordy wykluczone: do_not_contact / status blokujący,
@@ -29,7 +29,7 @@
  *   output/batch-fragments.csv  — zgodność wsteczna (nazwa,url,score,priorytet_glowny,
  *     fragment_do_maila) — NIE jest głównym wynikiem.
  *
- * Rodzynki 7–8/8 (PISAĆ) do arkusza `Claude_import` (status_importu: NOWY) wysyła osobno
+ * Rodzynki 5–6/6 (PISAĆ) do arkusza `Claude_import` (status_importu: NOWY) wysyła osobno
  * push-import.js — ten skrypt tylko raportuje lokalnie. Po imporcie dalszy ciąg (weryfikacja,
  * treść maila, szkic Gmail, wysyłka) jest poza tym repo.
  */
@@ -113,7 +113,7 @@ const { doRaportu, pominiete } = podzielLeady(leads);
 
 const NAGLOWKI = [
   'lead_id', 'nazwa', 'miasto', 'url', 'telefon', 'email', 'imie_kontaktowe',
-  'priorytet_wizualny', 'decyzja', 'scoring_0_8', 'glowny_problem', 'obserwacja_do_maila',
+  'priorytet_wizualny', 'decyzja', 'scoring_0_6', 'glowny_problem', 'obserwacja_do_maila',
   'powod_biznesowy', 'zrodlo_audytu', 'data_audytu',
   'status_sugerowany', 'score_audytu_0_100', 'tier_audytu', 'pewnosc_oceny',
   'mocne_przeslanki', 'co_jest_kosmetyka', 'powod_pominiecia',
@@ -140,8 +140,10 @@ for (const { lead, blokada } of doRaportu) {
 
   // ── warstwy danych: audyt-dane > lead-info > wiersz CSV ─────────
   const k = dane.kwalifikacja_leada || null;
-  const s = (k && k.scoring_0_8) || {};
-  const staraWersja = !k;
+  // scoring_0_8 (skala sprzed 2026-08-30) trafia do kubełka „stary schemat" — nie
+  // przeliczamy go na 0–6, bo dawny wymiar „potencjał finansowy" nie ma odpowiednika.
+  const s = (k && k.scoring_0_6) || {};
+  const staraWersja = !k || (!k.scoring_0_6 && !!k.scoring_0_8);
 
   const razem = Number.isInteger(s.razem) ? s.razem : null;
   const pkt = (nazwa) => (s[nazwa] && Number.isInteger(s[nazwa].punkty) ? s[nazwa].punkty : null);
@@ -177,7 +179,7 @@ for (const { lead, blokada } of doRaportu) {
     dane.imie_kontaktowe ?? leadInfo?.imie_kontaktowe ?? lead.imie_kontaktowe ?? '',
     priorytetWiz,
     decyzja,
-    razem != null ? `${razem}/8` : '',
+    razem != null ? `${razem}/6` : '',
     (k && k.glowny_problem) || '',
     fragment,
     (k && k.powod_biznesowy) || '',
@@ -200,7 +202,7 @@ for (const { lead, blokada } of doRaportu) {
       bucket,
       razem: razem ?? -1,
       A: pkt('potrzeba_przebudowy') ?? -1,
-      B: pkt('potencjal_finansowy') ?? -1,
+      B: pkt('skala_poprawy') ?? -1,
       nazwa: (dane.nazwa || lead.nazwa || '').toLowerCase(),
     },
     cols,
@@ -253,4 +255,4 @@ const pisac = wiersze.filter(w => w.sortKey.bucket === 0).length;
 const odpuscic = wiersze.filter(w => w.sortKey.bucket === 1).length;
 const wstepne = wiersze.filter(w => w.sortKey.bucket === 2).length;
 console.log(`\nPodsumowanie: PISAĆ ${pisac} · ODPUŚCIĆ ${odpuscic} · wstępne/do ponownego audytu ${wstepne} · pominięte ${pominiete.length} · nieudane ${nieudane.length}`);
-if (pisac) console.log('Rodzynki 7–8/8 wyślij do arkusza: node push-import.js <leady.json> (patrz sheets/README.md)');
+if (pisac) console.log('Rodzynki 5–6/6 wyślij do arkusza: node push-import.js <leady.json> (patrz sheets/README.md)');

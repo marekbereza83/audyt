@@ -36,7 +36,7 @@ Klucz Firecrawl wczytywany z `scripts/.env` (plik gitignorowany). Jeden scrape t
 Na żądanie „zaudytuj https://..." wykonaj pełny workflow (`SKILL.md`) i zwróć:
 - `output/<domena>/audyt.md` — raport po polsku w tonie merytorycznym
 - `output/<domena>/audyt-dane.json` — dane strukturalne (8 wymiarów + score + kwalifikacja leada)
-- `output/<domena>/mail-observation.txt` — **tylko gdy kwalifikacja da `PISAĆ` (7–8/8) bez blokady kontaktu** — krótki fakt + jedno pytanie otwarte, ≤400 znaków. Nie temat, nie treść maila (patrz „Podział pracy" wyżej).
+- `output/<domena>/mail-observation.txt` — **tylko gdy kwalifikacja da `PISAĆ` (5–6/6) bez blokady kontaktu** — krótki fakt + jedno pytanie otwarte, ≤400 znaków. Nie temat, nie treść maila (patrz „Podział pracy" wyżej).
 - screenshoty desktop i mobile
 
 Po audycie zapytaj do czego jest potrzebny (cold mail / blog / wiedza) — to zmienia tylko anonimizację (publiczny = anonimizuj nazwę kancelarii); Claude nie pisze ani nie wysyła maila w żadnym z tych przypadków.
@@ -49,12 +49,12 @@ Opcjonalnie z konkurentem: `node scrape.js https://kancelaria.pl https://konkure
 
 **Claude (to repo) robi wyłącznie prospecting i kwalifikację leada — nigdy nie pisze ani nie wysyła cold maila.** Pipeline:
 
-`Apify/prospecting → Claude (scrape + audyt + kwalifikacja A/B/C/D) → Claude_import (status_importu: NOWY) → ChatGPT (weryfikacja, treść maila M1, szkic Gmail, aktualizacja Trackera) → człowiek (przegląd i ręczna wysyłka)`
+`Apify/prospecting → Claude (scrape + audyt + kwalifikacja 0–6) → Claude_import (status_importu: NOWY) → ChatGPT (weryfikacja, treść maila M1, szkic Gmail, aktualizacja Trackera) → człowiek (przegląd i ręczna wysyłka)`
 
 1. Uruchom audyt: `audyt-kancelarii-skill/scripts/scrape.js <url>` → `audyt.md` + `audyt-dane.json`.
-2. Zakwalifikuj leada (`kryteria-audytu.md` → „Ocena leada", `SKILL.md` → Krok 5). Tylko dla `PISAĆ` (7–8/8) bez blokady kontaktu: zapisz `mail-observation.txt` — krótki, faktograficzny hak (fakt + jedno pytanie otwarte), **nie temat i nie treść maila** (SKILL.md → Krok 6).
+2. Zakwalifikuj leada (`kryteria-audytu.md` → „Ocena leada", `SKILL.md` → Krok 5). Tylko dla `PISAĆ` (5–6/6) bez blokady kontaktu: zapisz `mail-observation.txt` — krótki, faktograficzny hak (fakt + jedno pytanie otwarte), **nie temat i nie treść maila** (SKILL.md → Krok 6).
 3. Wyślij do arkusza: `node audyt-kancelarii-skill/scripts/push-import.js <leady.json>` → zakładka `Claude_import`, `status_importu: NOWY`.
-4. Stąd dalej pracuje ChatGPT (poza tym repo): ponownie weryfikuje 7–8/8, sprawdza duplikaty w całym Trackerze i historii Gmaila, pisze temat i treść M1, tworzy **wyłącznie szkic** Gmail, zapisuje `SZKIC_GMAIL` w Trackerze. Po przejęciu rekordu zmienia `status_importu` z `NOWY` na `PRZEJĘTY`.
+4. Stąd dalej pracuje ChatGPT (poza tym repo): ponownie weryfikuje 5–6/6, sprawdza duplikaty w całym Trackerze i historii Gmaila, pisze temat i treść M1, tworzy **wyłącznie szkic** Gmail, zapisuje `SZKIC_GMAIL` w Trackerze. Po przejęciu rekordu zmienia `status_importu` z `NOWY` na `PRZEJĘTY`.
 5. Człowiek sprawdza szkic i wysyła ręcznie. **Żaden proces nie wysyła cold maila automatycznie.**
 
 **Ważne — audyt daje jedną obserwację, nie brief techniczny na całą sekwencję.** FORMA sprzedaje nową stronę/wizerunek, nie audyt SEO/wydajności. `obserwacja_do_maila` (i cała dalsza korespondencja, którą pisze już ChatGPT) ma być wolna od żargonu technicznego (LCP, cache, SSL, JSON-LD, benchmark, „score") — te wchodzą dopiero do rozmowy po odpowiedzi odbiorcy. Pełne zasady i przykład w `.agents/product-marketing.md` → „Co sprzedaje FORMA" (kontekst produktowy dla drugiej automatyzacji, nie do wykonania przez Claude w tym repo).
@@ -75,7 +75,7 @@ node scrape.js --batch lista.csv
 # 3. Zbiorczy CSV lokalnie (BOM UTF-8, gotowy do Excela)
 node batch-report.js lista.csv   # → output/batch-leady.csv (główny raport)
 
-# 4. Rodzynki 7–8/8 (PISAĆ) do arkusza — status_importu: NOWY, dalej pracuje ChatGPT
+# 4. Rodzynki 5–6/6 (PISAĆ) do arkusza — status_importu: NOWY, dalej pracuje ChatGPT
 node push-import.js leady.json
 ```
 

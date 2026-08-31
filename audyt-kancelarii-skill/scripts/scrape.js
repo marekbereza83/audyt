@@ -36,10 +36,10 @@
  * normalnie — audyt można zaktualizować — ale w lead-info.json dostają mail_zablokowany: true
  * i dla nich NIE powstaje ani obserwacja_do_maila, ani przekazanie do Claude_import.
  *
- * Tryb batch zbiera tylko dane. Audyt i kwalifikację A/B/C/D (0–8) generuje Claude per strona
+ * Tryb batch zbiera tylko dane. Audyt i kwalifikację (3 wymiary, 0–6) generuje Claude per strona
  * (SKILL.md) — WYŁĄCZNIE prospecting i kwalifikacja, bez pisania treści maila (temat/treść M1
  * powstają później, po stronie ChatGPT, z zakładki „Claude_import"). Zbiorczy raport:
- * node batch-report.js <lista.csv> → output/batch-leady.csv, a rodzynki 7–8/8 (PISAĆ) idą do
+ * node batch-report.js <lista.csv> → output/batch-leady.csv, a rodzynki 5–6/6 (PISAĆ) idą do
  * arkusza przez push-import.js (status_importu: NOWY).
  */
 
@@ -578,9 +578,10 @@ async function scrapeContent(targetUrl, { withSubpages = false } = {}) {
   // czyli ~5 stron na audyt. Przy darmowym planie 1 000 stron/mies to ~200 pełnych audytów.
   //
   // Zestaw podstron jest przełączalny przez FIRECRAWL_PODSTRONY (lista po przecinku).
-  // Domyślnie wszystkie cztery — NIE tnij ich „na oszczędność" bez potrzeby: `team` żywi
-  // wymiar B, a bez B2 lead praktycznie nigdy nie dobije do 7–8/8 (kryteria-audytu.md),
-  // więc tańszy audyt daje po prostu więcej audytów, które nie znajdują rodzynków.
+  // Domyślnie wszystkie cztery — NIE tnij ich „na oszczędność" bez potrzeby: `services`
+  // i `news` żywią wymiary „skala poprawy" i „powód do kontaktu" (kryteria-audytu.md),
+  // a bez nich lead rzadziej dobija do 5–6/6, więc tańszy audyt daje po prostu więcej
+  // audytów, które nie znajdują rodzynków.
   // Sensowne cięcie to `contact` (sam email do arkusza) przy przeglądzie masowym.
   if (withSubpages) {
     const cache = {};          // wynik mapUrl — jedno wywołanie API na kancelarię
@@ -985,7 +986,7 @@ async function runBatch(csvPath) {
 
   console.log(`\nGotowe: ${ok} OK, ${failed} błędów, ${skipped.length} pominiętych (z ${leads.length}).`);
   console.log('Dalej: Claude czyta dane każdej strony i generuje audyt.md + audyt-dane.json + kwalifikacja-leada.md');
-  console.log('(tylko obserwacja_do_maila dla 7–8/8 PISAĆ bez blokady kontaktu — bez tematu/treści maila, patrz SKILL.md → Krok 5–6),');
+  console.log('(tylko obserwacja_do_maila dla 5–6/6 PISAĆ bez blokady kontaktu — bez tematu/treści maila, patrz SKILL.md → Krok 5–6),');
   console.log('a na końcu: node batch-report.js ' + path.basename(csvPath) + '  → output/batch-leady.csv (+ push-import.js dla rodzynków → Claude_import)');
 }
 

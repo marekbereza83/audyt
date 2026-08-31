@@ -63,12 +63,11 @@ function basePISAC(overrides = {}) {
     tier_audytu: 'niski',
     kwalifikacja_leada: {
       decyzja: 'PISAĆ',
-      scoring_0_8: {
+      scoring_0_6: {
         potrzeba_przebudowy: wymiar(2, 'Google Sites, brak mobile'),
-        potencjal_finansowy: wymiar(2, '4 prawników, obsługa firm'),
         skala_poprawy: wymiar(2, 'zespół i oferta niewidoczne'),
         naturalny_powod_kontaktu: wymiar(1, 'ostatni wpis 2019 — prawdziwy, przeciętny'),
-        razem: 7,
+        razem: 5,
       },
       glowny_problem: 'Brak specjalizacji w hero',
       powod_biznesowy: 'Rozbudowana kancelaria ze słabą stroną',
@@ -97,12 +96,11 @@ function baseODPUSC(overrides = {}) {
     tier_audytu: 'sredni',
     kwalifikacja_leada: {
       decyzja: 'ODPUŚCIĆ',
-      scoring_0_8: {
+      scoring_0_6: {
         potrzeba_przebudowy: wymiar(0, 'strona nowoczesna'),
-        potencjal_finansowy: wymiar(1, 'mała kancelaria solo'),
         skala_poprawy: wymiar(0, 'niewielka'),
         naturalny_powod_kontaktu: wymiar(0, 'brak'),
-        razem: 1,
+        razem: 0,
       },
       glowny_problem: 'brak wyraźnego problemu',
       powod_biznesowy: 'Strona jest w porządku, brak uzasadnienia dla nowej',
@@ -159,29 +157,29 @@ test('PISAĆ bez obserwacji → błąd', () => {
 test('punkty poza zakresem 0–2 → błąd', () => {
   const dir = mkFixtureDir();
   const dane = basePISAC();
-  dane.kwalifikacja_leada.scoring_0_8.potrzeba_przebudowy.punkty = 3;
+  dane.kwalifikacja_leada.scoring_0_6.potrzeba_przebudowy.punkty = 3;
   writeAudytDane(dir, dane);
   const { errors } = validateDir(dir);
   assert.ok(errors.some(e => /musi być liczbą całkowitą 0–2/.test(e)));
 });
 
-test('razem ≠ suma A+B+C+D → błąd', () => {
+test('razem ≠ suma trzech wymiarów → błąd', () => {
   const dir = mkFixtureDir();
   const dane = basePISAC();
-  dane.kwalifikacja_leada.scoring_0_8.razem = 8; // realna suma to 7
+  dane.kwalifikacja_leada.scoring_0_6.razem = 4; // realna suma to 5
   writeAudytDane(dir, dane);
   const { errors } = validateDir(dir);
-  assert.ok(errors.some(e => /≠ suma A\+B\+C\+D/.test(e)));
+  assert.ok(errors.some(e => /≠ suma trzech wymiarów/.test(e)));
 });
 
-test('decyzja PISAĆ niezgodna z progiem dla 6/8 → błąd', () => {
+test('decyzja PISAĆ niezgodna z progiem dla 4/6 → błąd', () => {
   const dir = mkFixtureDir();
   const dane = basePISAC();
-  dane.kwalifikacja_leada.scoring_0_8.naturalny_powod_kontaktu = wymiar(0, 'brak');
-  dane.kwalifikacja_leada.scoring_0_8.razem = 6;
+  dane.kwalifikacja_leada.scoring_0_6.naturalny_powod_kontaktu = wymiar(0, 'brak');
+  dane.kwalifikacja_leada.scoring_0_6.razem = 4;
   writeAudytDane(dir, dane);
   const { errors } = validateDir(dir);
-  assert.ok(errors.some(e => /niezgodna z progami dla 6\/8/.test(e)));
+  assert.ok(errors.some(e => /niezgodna z progami dla 4\/6/.test(e)));
 });
 
 test('ocena wstępna z niepustą decyzją → błąd', () => {
@@ -390,10 +388,10 @@ test('csvEscape cudzysłowuje tylko pola z separatorem/cudzysłowem/newline', ()
 section('batch-report.js (proces potomny, fixture output/)');
 // ═══════════════════════════════════════════════════════════════════════
 
-function writeQualifiedFixture(baseDir, domain, { decyzja, razem, A = 2, B = 2, C = 2, D, scoreAudytu = 40, nazwa }) {
+function writeQualifiedFixture(baseDir, domain, { decyzja, razem, A = 2, C = 2, D, scoreAudytu = 40, nazwa }) {
   const dir = path.join(baseDir, domain);
   fs.mkdirSync(dir, { recursive: true });
-  const dEff = D != null ? D : Math.max(0, razem - A - B - C);
+  const dEff = D != null ? D : Math.max(0, razem - A - C);
   const dane = {
     nazwa,
     priorytet_wizualny: 'wysoki',
@@ -401,9 +399,8 @@ function writeQualifiedFixture(baseDir, domain, { decyzja, razem, A = 2, B = 2, 
     tier_audytu: 'niski',
     kwalifikacja_leada: {
       decyzja,
-      scoring_0_8: {
+      scoring_0_6: {
         potrzeba_przebudowy: wymiar(A, 'x'),
-        potencjal_finansowy: wymiar(B, 'x'),
         skala_poprawy: wymiar(C, 'x'),
         naturalny_powod_kontaktu: wymiar(dEff, 'x'),
         razem,
@@ -425,10 +422,10 @@ function writeQualifiedFixture(baseDir, domain, { decyzja, razem, A = 2, B = 2, 
 
 test('batch-leady.csv: PISAĆ > ODPUŚCIĆ > stare/wstępne, scoring malejąco, score_audytu bez wpływu', () => {
   const base = mkFixtureDir();
-  writeQualifiedFixture(base, 'domainb.pl', { decyzja: 'PISAĆ', razem: 8, A: 2, B: 2, C: 2, D: 2, scoreAudytu: 40, nazwa: 'Kancelaria B' });
-  writeQualifiedFixture(base, 'domaina.pl', { decyzja: 'PISAĆ', razem: 7, A: 2, B: 2, C: 2, D: 1, scoreAudytu: 40, nazwa: 'Kancelaria A pierwsza' });
-  writeQualifiedFixture(base, 'domainz.pl', { decyzja: 'PISAĆ', razem: 7, A: 2, B: 2, C: 2, D: 1, scoreAudytu: 95, nazwa: 'Kancelaria Z druga' });
-  writeQualifiedFixture(base, 'domainc.pl', { decyzja: 'ODPUŚCIĆ', razem: 2, A: 0, B: 1, C: 1, D: 0, scoreAudytu: 90, nazwa: 'Kancelaria C' });
+  writeQualifiedFixture(base, 'domainb.pl', { decyzja: 'PISAĆ', razem: 6, A: 2, C: 2, D: 2, scoreAudytu: 40, nazwa: 'Kancelaria B' });
+  writeQualifiedFixture(base, 'domaina.pl', { decyzja: 'PISAĆ', razem: 5, A: 2, C: 2, D: 1, scoreAudytu: 40, nazwa: 'Kancelaria A pierwsza' });
+  writeQualifiedFixture(base, 'domainz.pl', { decyzja: 'PISAĆ', razem: 5, A: 2, C: 2, D: 1, scoreAudytu: 95, nazwa: 'Kancelaria Z druga' });
+  writeQualifiedFixture(base, 'domainc.pl', { decyzja: 'ODPUŚCIĆ', razem: 2, A: 0, C: 2, D: 0, scoreAudytu: 90, nazwa: 'Kancelaria C' });
 
   const oldDir = path.join(base, 'domaind.pl');
   fs.mkdirSync(oldDir, { recursive: true });
@@ -468,7 +465,7 @@ test('batch-leady.csv: PISAĆ > ODPUŚCIĆ > stare/wstępne, scoring malejąco, 
 
 test('batch-pominiete.csv: duplikaty domeny i firmy zamknięte', () => {
   const base = mkFixtureDir();
-  writeQualifiedFixture(base, 'domaine.pl', { decyzja: 'PISAĆ', razem: 7, A: 2, B: 2, C: 2, D: 1, nazwa: 'Kancelaria E' });
+  writeQualifiedFixture(base, 'domaine.pl', { decyzja: 'PISAĆ', razem: 5, A: 2, C: 2, D: 1, nazwa: 'Kancelaria E' });
 
   const header = 'lead_id,nazwa,miasto,url,telefon,email,imie_kontaktowe,status,do_not_contact,notatki,data_M1,gmail_thread_id,totalScore,reviewsCount,imagesCount,categories,placeId,permanentlyClosed';
   const rows = [
@@ -531,7 +528,7 @@ test('odsiewa: brak www, zamknięte, duplikat w paczce, zaudytowane, odrzucone w
   fs.writeFileSync(path.join(out, 'kancelariatopor.pl', 'audyt-dane.json'), '{"score":50}');
   fs.writeFileSync(
     path.join(out, 'odrzucone.csv'),
-    '﻿domena;scoring_0_8;powod;data\r\nadwokat-testowy.pl;5;za slabo;2026-07-01\r\n', 'utf8'
+    '﻿domena;scoring_0_6;powod;data\r\nadwokat-testowy.pl;3;za slabo;2026-07-01\r\n', 'utf8'
   );
 
   // URL-e celowo z www/ścieżką — dedup musi porównywać znormalizowaną domenę,

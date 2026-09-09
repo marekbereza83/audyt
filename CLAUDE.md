@@ -77,7 +77,7 @@ W obu narzędziach obowiązuje ta sama reguła pierwszeństwa: **zrzut wygrywa z
 |---|---|---|
 | `FIRECRAWL_API_KEY` | `audyt-kancelarii-skill/scripts/.env` | scrape (gitignorowane, ładowane z `override: true`) |
 | `FIRECRAWL_ROWNOLEGLE` | scrape `--batch` | domyślnie 2 (limit współbieżności darmowego planu) |
-| `FIRECRAWL_PODSTRONY` | scrape | domyślnie `services,team,news,contact` — **nie tnij „na oszczędność"**, bez `team` wymiar B leada siada |
+| `FIRECRAWL_PODSTRONY` | scrape | domyślnie `services,team,news,contact` — **nie tnij „na oszczędność"**, bez `services` i `news` siadają wymiary „skala poprawy" i „powód do kontaktu" |
 | `FIRECRAWL_LIMIT_AUDYTOW` | `budzet.js` | domyślnie 160 (~20% zapasu pod 200/mies.); licznik lokalny per komputer |
 | `AUDYT_OUTPUT_DIR` | scrape, batch-report, testy | podmiana katalogu wyjściowego audytu |
 | `ECOM_OUTPUT_DIR` | `scan-store.js`, `patterns.js` | podmiana katalogu wyjściowego skanów |
@@ -227,11 +227,11 @@ Małe n: przy 12–15 sklepach jedna pozycja to ~8 pp. Pisz „6 z 12", nie „5
 |---|---|
 | `audyt-kancelarii-skill/CLAUDE.md` | **model danych audytu** — mapowanie pól `content.json`/`vitals.json` na 8 wymiarów z progami, trzy niezależne warstwy ocen, znane quirki `scrape.js` (firecrawl@1.x `.default`, lighthouse@12 ESM, `chrome.kill()` na Windows) |
 | `audyt-kancelarii-skill/SKILL.md` | workflow Kroki 0–6 |
-| `audyt-kancelarii-skill/reference/kryteria-audytu.md` | progi wymiarów + „Ocena leada" (A/B/C/D, 0–8) |
+| `audyt-kancelarii-skill/reference/kryteria-audytu.md` | progi wymiarów + „Ocena leada" (3 wymiary, 0–6) |
 | `audyt-kancelarii-skill/sheets/README.md` | webhook Apps Script i zakładka `Claude_import` |
 | `ecommerce-intel-skill/SKILL.md` | workflow intelu + struktura raportu i briefu |
 | `ecommerce-intel-skill/reference/kryteria-ecommerce.md` | 9 obszarów oceny (warstwa interpretacji) |
 | `.agents/product-marketing.md` | „Co sprzedaje FORMA" — kontekst produktowy dla drugiej automatyzacji (ChatGPT), nie do wykonania w tym repo |
-| `WDROZENIE-KWALIFIKACJA-STAN.md` | plik przejściowy stanu wdrożenia kwalifikacji 0–8; do usunięcia po dokończeniu |
+| `WDROZENIE-KWALIFIKACJA-STAN.md` | plik przejściowy stanu wdrożenia kwalifikacji; **spisany pod skalę 0–8, nieaktualny od 2026-08-30** — do usunięcia po dokończeniu |
 
-**Trzy niezależne skale, nigdy nie pisz gołego „score":** `priorytet_wizualny` (jak wygląda, Krok 0) ≠ `score_audytu_0_100` (jakość strony, 8 wymiarów) ≠ `kwalifikacja_leada.scoring_0_8` (szansa sprzedaży, A/B/C/D). Niski `score_audytu_0_100` **nie** oznacza dobrego leada.
+**Trzy niezależne skale, nigdy nie pisz gołego „score":** `priorytet_wizualny` (jak wygląda, Krok 0) ≠ `score_audytu_0_100` (jakość strony, 8 wymiarów) ≠ `kwalifikacja_leada.scoring_0_6` (szansa sprzedaży, 3 wymiary: potrzeba przebudowy / skala poprawy / naturalny powód kontaktu). Niski `score_audytu_0_100` **nie** oznacza dobrego leada.

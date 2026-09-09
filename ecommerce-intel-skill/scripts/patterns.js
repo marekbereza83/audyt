@@ -256,14 +256,58 @@ wynik.sekcje = Object.entries(pozycjeTypow)
   .sort((a, b) => a.sredniaPozycja - b.sredniaPozycja);
 
 // Rozkład cen i długości strony — kontekst do pozycjonowania własnej oferty.
-const ceny = sklepy.map((s) => s.shopify?.cenaMin).filter((c) => typeof c === 'number');
-const ekrany = sklepy.map((s) => s.desktop?.strona?.ekranow).filter((e) => typeof e === 'number');
+//
+// CENA MUSI NIEŚĆ WALUTĘ. Wcześniej liczyliśmy min/medianę/max z samego
+// `shopify.cenaMin`, czyli z gołych liczb w różnych walutach wrzuconych do
+// jednego worka — USD, GBP, EUR i AUD naraz. Do tego endpoint /products/<h>.json
+// zwraca cenę w walucie serwowanej ODWIEDZAJĄCEMU, więc skan z polskiego IP dał
+// Soulyshine `cenaMin: 453` — to 453 zł, nie 453 $ — i ta wartość lądowała jako
+// `max` całego rozkładu. Analityk to wyłapał ręcznie i zapisał w raporcie „nie
+// użyto w rozkładzie cen bez weryfikacji", ale kod i tak używał. Notatka mówiła
+// jedno, agregat liczył drugie — a to agregat trafia do briefu jako fakt.
+//
+// Kolejność źródeł: pierwsze, które podaje JAWNY kod waluty.
+//   1. produktLd       — schema.org, cena i waluta widziane przez klienta
+//   2. kontekstRynkowy — obserwacja z listy wejściowej (WinningHunter)
+//   3. shopify.cenaMin — bez kodu waluty, więc NIE wchodzi do rozkładu
+// Dzięki punktowi 1 do statystyk wchodzą też sklepy spoza Shopify (WooCommerce
+// i inne), o ile mają schema.org — wcześniej wypadały po cichu.
+const liczba = (v) => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+const cenaSklepu = (s) => {
+  const ld = s.desktop?.produktLd;
+  if (liczba(ld?.cena) !== null && ld?.waluta) return { cena: liczba(ld.cena), waluta: ld.waluta, zrodlo: 'produktLd' };
+  const kr = s.kontekstRynkowy;
+  if (liczba(kr?.cena_obs) !== null && kr?.waluta) return { cena: liczba(kr.cena_obs), waluta: kr.waluta, zrodlo: 'kontekstRynkowy' };
+  return null;
+};
+
 const mediana = (a) => { if (!a.length) return null; const b = [...a].sort((x, y) => x - y); return b[Math.floor(b.length / 2)]; };
+const rozklad = (a) => ({ min: a.length ? Math.min(...a) : null, mediana: mediana(a), max: a.length ? Math.max(...a) : null, n: a.length });
+
+const wgWaluty = {};
+const bezWaluty = [];
+const rozbiezneCeny = [];
+for (const s of sklepy) {
+  const c = cenaSklepu(s);
+  if (!c) { bezWaluty.push({ domena: s.domena, shopifyCenaMin: s.shopify?.cenaMin ?? null }); continue; }
+  (wgWaluty[c.waluta] ||= []).push(c.cena);
+
+  // Rozjazd między źródłami zwykle znaczy, że sklep serwuje inną walutę niż ta,
+  // w której go obserwowaliśmy. Nie zgadujemy kursu — zgłaszamy do oczu.
+  const sc = liczba(s.shopify?.cenaMin);
+  if (sc !== null && c.cena > 0 && Math.abs(sc - c.cena) / c.cena > 0.15) {
+    rozbiezneCeny.push({ domena: s.domena, wgZrodla: `${c.cena} ${c.waluta} (${c.zrodlo})`, shopifyCenaMin: sc });
+  }
+}
+
+const ekrany = sklepy.map((s) => s.desktop?.strona?.ekranow).filter((e) => typeof e === 'number');
 wynik.rozklady = {
-  cenaMinShopify: { min: ceny.length ? Math.min(...ceny) : null, mediana: mediana(ceny), max: ceny.length ? Math.max(...ceny) : null, n: ceny.length },
-  dlugoscStronyEkrany: { min: ekrany.length ? Math.min(...ekrany) : null, mediana: mediana(ekrany), max: ekrany.length ? Math.max(...ekrany) : null, n: ekrany.length },
+  cenyWgWaluty: Object.fromEntries(Object.entries(wgWaluty).sort(([a], [b]) => a.localeCompare(b)).map(([w, a]) => [w, rozklad(a)])),
+  sklepyBezWalutyCeny: bezWaluty,
+  dlugoscStronyEkrany: rozklad(ekrany),
   liczbaSekcji: { mediana: mediana(sklepy.map((s) => s.desktop?.liczbaSekcji).filter(Number.isFinite)) },
 };
+wynik.rozbiezneCeny = rozbiezneCeny;
 
 fs.mkdirSync(OUT_BASE, { recursive: true });
 fs.writeFileSync(path.join(OUT_BASE, '_patterns.json'), JSON.stringify(wynik, null, 2), 'utf8');
@@ -295,6 +339,16 @@ console.log('APLIKACJE — opinie:', wynik.aplikacje.opinie.map(([n, c]) => `${n
 console.log('\nKOLEJNOŚĆ SEKCJI (średnia pozycja, w ilu sklepach):');
 wynik.sekcje.forEach((s) => console.log(`  ${String(s.sredniaPozycja).padStart(5)}  ${String(s.wIluSklepach).padStart(2)} sklepów  ${s.typ}`));
 
-console.log(`\nCENA (Shopify, min wariantu): ${JSON.stringify(wynik.rozklady.cenaMinShopify)}`);
-console.log(`DŁUGOŚĆ STRONY (ekrany): ${JSON.stringify(wynik.rozklady.dlugoscStronyEkrany)}`);
+console.log('\nCENY (osobno na walutę — bez przeliczania kursów):');
+const walutyCen = Object.entries(wynik.rozklady.cenyWgWaluty);
+if (!walutyCen.length) console.log('  (brak sklepu z jawnym kodem waluty)');
+walutyCen.forEach(([w, r]) => console.log(`  ${w}  min ${r.min}  mediana ${r.mediana}  max ${r.max}  (n=${r.n})`));
+if (wynik.rozklady.sklepyBezWalutyCeny.length) {
+  console.log('  bez jawnej waluty (poza rozkładem): ' + wynik.rozklady.sklepyBezWalutyCeny.map((s) => `${s.domena}${s.shopifyCenaMin !== null ? ` [shopify.cenaMin=${s.shopifyCenaMin}]` : ''}`).join(', '));
+}
+if (wynik.rozbiezneCeny.length) {
+  console.log('⚠ Cena z endpointu Shopify rozjeżdża się ze źródłem z walutą — prawdopodobnie sklep serwuje inną walutę:');
+  wynik.rozbiezneCeny.forEach((r) => console.log(`   ${r.domena} — ${r.wgZrodla} vs shopify.cenaMin=${r.shopifyCenaMin}`));
+}
+console.log(`\nDŁUGOŚĆ STRONY (ekrany): ${JSON.stringify(wynik.rozklady.dlugoscStronyEkrany)}`);
 console.log(`\n→ output/_patterns.json`);

@@ -18,6 +18,13 @@
 
 # === Artefakty audytów (generowane, ciężkie) ===
 audyt-kancelarii-skill/output/
+# Skany sklepów: 4 zrzuty na sklep (~4 MB), przy 40 sklepach ~180 MB. Dane są odtwarzalne
+# jednym `node scan-store.js --batch` i darmowe (bez API), więc nie ma powodu ich wersjonować.
+# Listy wejściowe (input/) ZOSTAJĄ w repo — definiują, co skanowaliśmy.
+ecommerce-intel-skill/output/
+# Raporty i briefy NIE zostają w tym repo. Trafiają do katalogu projektu produktowego
+# (dla naszyjnika: dev/shopify/neckle/intelligence/). Podział: audyt = narzędzie
+# wielokrotnego użytku, projekt produktowy = wiedza o konkretnym rynku i decyzje.
 
 # === Duże pliki testowe ===
 **/hero-5mb.jpg

@@ -1,0 +1,10 @@
+{
+  "name": "audyt",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Wspólne repo: audyt-kancelarii-skill (produkcja) + ecommerce-intel-skill, na wspólnym silniku core/",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  },
+  "_uwaga": "playwright jest tu, a nie w skillu, bo core/browser.js go wymaga i musi się rozwiązywać dla każdego skilla korzystającego z core/. audyt-kancelarii-skill/scripts ma własne node_modules (firecrawl+lighthouse) i działa niezależnie — nie ruszamy go."
+}

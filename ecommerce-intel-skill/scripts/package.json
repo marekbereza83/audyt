@@ -1,0 +1,13 @@
+{
+  "name": "ecommerce-intel-scripts",
+  "version": "1.0.0",
+  "description": "Skaner sklepów ecommerce — Playwright + darmowe endpointy Shopify (bez Firecrawl)",
+  "main": "scan-store.js",
+  "scripts": {
+    "skan": "node scan-store.js",
+    "wzorce": "node patterns.js"
+  },
+  "dependencies": {
+    "playwright": "^1.44.0"
+  }
+}

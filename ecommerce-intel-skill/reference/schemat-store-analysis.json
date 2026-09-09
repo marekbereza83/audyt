@@ -1,0 +1,44 @@
+{
+  "_komentarz": "KANONICZNY SZABLON store-analysis.json — kopiuj i wypełniaj przy analizie każdego sklepu (Krok 4 w SKILL.md). To warstwa INFERENCE: każde pole `podstawa` musi wskazywać konkretne pole z store-data.json albo konkretny zrzut. Bez podstawy nie zapisuj oceny. Nie ma tu scoringu 0-100 — celem nie jest ocenić konkurenta, tylko zrozumieć jego decyzję projektową i rozstrzygnąć, czy chcemy ją powtórzyć.",
+
+  "domena": "",
+  "url": "",
+  "dataAnalizy": "RRRR-MM-DD",
+  "rolaWZestawieniu": "konkurent-bezposredni | konkurent-sasiedni | wzorzec-zewnetrzny | reseller-generyczny | martwy",
+  "wariantProduktu": "portret-ze-zdjecia | grawer-tekstowy | symbol-lapa | urna-prochy | inne — WAŻNE: nie porównuj wprost różnych wariantów",
+
+  "sygnalPaid": {
+    "aktywneReklamyStrona": null,
+    "startReklam": null,
+    "uwaga": "liczba reklam to dowód WYDATKU, nigdy zysku; metryka jest na poziomie strony, nie SKU"
+  },
+
+  "obszary": {
+    "zgiecie": { "coRobi": "", "podstawa": "", "standardCzyOdchylenie": "standard | odchylenie", "czyPowtarzamy": "tak | nie | z-modyfikacja", "dlaczego": "" },
+    "kolejnoscSekcji": { "coRobi": "", "podstawa": "", "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "personalizacja": { "coRobi": "", "podstawa": "", "modelUploadu": "przed-zakupem | po-zakupie | brak-zdjecia", "podgladPrzedZakupem": null, "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "sciezkaDoZakupu": { "coRobi": "", "podstawa": "", "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "zaufanie": { "coRobi": "", "podstawa": "", "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "obiekcje": { "zbijaneNaStronie": [], "niezbijane": [], "podstawa": "" },
+    "oferta": { "coRobi": "", "podstawa": "", "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "mobile": { "coRobi": "", "podstawa": "", "rozniSieOdDesktop": null, "standardCzyOdchylenie": "", "czyPowtarzamy": "", "dlaczego": "" },
+    "anomalie": { "coOdstaje": [], "podstawa": "", "interpretacja": "okazja | pulapka | nierozstrzygniete", "uzasadnienie": "" }
+  },
+
+  "najlepszeRozwiazanie": {
+    "co": "jedna rzecz, którą ten sklep robi lepiej niż reszta zestawienia",
+    "podstawa": "",
+    "doPrzeniesienia": null
+  },
+  "najwiekszaSlabosc": {
+    "co": "jedna rzecz, którą robi wyraźnie gorzej — kandydat na nasze pole do wyróżnienia",
+    "podstawa": ""
+  },
+
+  "rozbieznosciDaneVsZrzut": [
+    "gdy sonda DOM mówi co innego niż widać na zrzucie — opisz obie wersje, nie wybieraj po cichu jednej"
+  ],
+  "czegoNieDaSieUstalic": [
+    "np. treść za akordeonem, przepływ po dodaniu do koszyka, checkout — sonda widzi stan po załadowaniu PDP"
+  ]
+}

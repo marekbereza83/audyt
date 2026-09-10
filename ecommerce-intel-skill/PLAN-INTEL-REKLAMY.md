@@ -1,9 +1,14 @@
 # Plan: warstwa reklamowa intelu ecommerce
 
-Stan na 2026-09-09. Plik roboczy — do usunięcia po zestawieniu z Hunterem i ocenie.
+Stan na 2026-09-10. Plik roboczy.
 
 Cel: dołożyć do intelu (który dziś patrzy wyłącznie na **sklep**) warstwę **reklamy**,
 i sprawdzić, czy dane z WinningHuntera zgadzają się z tym, co widać w Meta Ad Library.
+
+**Punkt C (zestawienie z Hunterem) odpada — użytkownik nie ma dostępu do Huntera.**
+Konektor pozostaje podpięty w sesji, gdyby to się zmieniło, ale nie jest to dalej
+blokerem tego pliku. Pytania z sekcji C zostają zapisane jako materiał na później,
+nie jako zadanie w toku.
 
 ---
 
@@ -122,12 +127,11 @@ wzorów — ten sam kształt co Febworld/Youtua/Provcustom, nie wąska marka pod
 zwierzęta jak Morgan & French czy Tulas. `rola: konkurent-sasiedni` może być
 zbyt hojna etykieta; niesprawdzone do końca, zostawione bez zmian.
 
-### C. Zestawić z Hunterem i ocenić
+### C. Zestawić z Hunterem i ocenić — odłożone, brak dostępu
 
-To jest właściwy cel. Konektor WinningHunter jest podpięty w sesji, ale wystawia
-na razie samo `authenticate` — po zalogowaniu sprawdzić, co realnie daje.
-
-Pytania do zestawienia:
+Użytkownik nie ma konta WinningHunter. Konektor jest podpięty w sesji i wystawia
+`authenticate`, ale to ślepa uliczka bez subskrypcji. Pytania zostają zapisane
+na wypadek, gdyby dostęp się pojawił:
 
 1. **Czy `aktywne_reklamy_strona` z Huntera zgadza się z licznikiem per strona
    z Ad Library?** Pierwotna lista ma dane Huntera z dnia budowania (`winninghunter-deepval`),
@@ -153,6 +157,73 @@ Pytania do zestawienia:
   per sklep w `desktop.aplikacje.analityka` i **nigdzie nieliczona**.
 - Czy `start_reklam` przeliczać na długość kampanii — dziś ciągłość siedzi
   tylko w polu `uwagi` jako tekst.
+
+### E. Catellae — skan PDP i wnioski dla kampanii (2026-09-10)
+
+Zeskanowany produkt flagowy: `catellae.com/products/naszyjnik-z-portretem-pupila`
+(209 zł, mechanizm portret-ze-zdjęcia — ten sam co Paw Lux Gems/hoohoopet).
+Nie wchodzi do `input/pet-necklace-eu.csv` — to nie konkurent, to podmiot.
+
+**Błąd metodologiczny po drodze, poprawiony:** `patterns.js` bez `--lista` skanuje
+cały `output/`, więc catellae.com wsiąkł we własną bazę porównawczą i zafałszował
+ją (0/15 → 1/16 na „obiecuje podgląd"). **Od teraz zawsze uruchamiać z
+`--lista input/pet-necklace-eu.csv`**, inaczej podmiot zanieczyszcza własny punkt
+odniesienia.
+
+**Catellae vs baza 15 konkurentów:**
+
+| Cecha | Catellae | Baza | Segment paid |
+|---|---|---|---|
+| Cena / ATC nad zgięciem | tak/tak | 93%/67% | — |
+| Upload zdjęcia nad zgięciem | tak | 40% | — |
+| Zdjęcia klientów w opiniach (UGC) | **nie** — apka Okendo zainstalowana, zero widocznych opinii na PDP | 67% | 86% |
+| Podgląd na żywo / przycisk podglądu | nie | 27% | 57% |
+| Cena porównawcza (przekreślona) | nie — 209 zł bez kotwicy | 80% | 86% |
+| Pole tekstowe personalizacji | nie wykryte w stanie domyślnym | 73% | — |
+| Konkretna data dostarczenia | nie | 27% | 57% |
+
+**Dwie flagi fałszywie pozytywne, sprawdzone na żywym HTML — nie na licznikiem:**
+
+- „Obiecuje podgląd przed produkcją" złapało frazę, ale realny tekst pod polem
+  uploadu to: *„Jeśli nie nada się do grawerunku, odezwiemy się przed produkcją."*
+  To reaktywna siatka bezpieczeństwa dla złego zdjęcia, **nie** proaktywna obietnica
+  „zobaczysz projekt przed zapłatą" jak Kelly Images Ph. Luka rynkowa (0/15) zostaje
+  częściowo, nie w pełni, zaadresowana.
+- „Pilność/niedobór" złapało słowo „tylko" ze zdania „mają znaczenie **tylko** dla
+  Was" — o intymności, nie o presji czasu. Realnie brak sygnału pilności.
+
+**Niepewne, niesprawdzone:** sonda nie otagowała sekcji „Od zdjęcia do biżuterii"
+(3 kroki: zdjęcie → grawer → noszenie) jako „jak-to-działa" mimo że wizualnie nią
+jest — możliwy błąd klasyfikatora w `dom-probe.js`, ten sam typ co w punkcie A.
+Nie sprawdzone, czy dotyczy też konkurentów (baza pokazuje tylko 1/15 dla tej
+cechy — może być zaniżona).
+
+**Wnioski dla kampanii reklamowej:**
+
+1. **Mechanizm (portret ze zdjęcia) jest zwalidowany** — Paw Lux Gems jedzie tę
+   samą kreację 22 miesiące na dokładnie tym mechanizmie. Nie trzeba testować,
+   czy działa, tylko jak go podać.
+2. **Rejestr copy Catellae już jest właściwy** (intymny, pierwsza osoba — jak
+   Tulas), ale hero mówi ogólnie o „Waszym pupilu" zamiast o jednym, nazwanym
+   zwierzęciu — to różnica między rejestrem generycznym a klikalnym.
+3. **Największe ryzyko jest na lądowisku, nie w reklamie.** Płatny ruch trafi
+   na PDP bez UGC (86% segmentu paid je ma), bez kotwicy cenowej (86%), bez
+   podglądu (57%). Rekomendacja: zamknąć te trzy luki przed skalowaniem budżetu,
+   nie równolegle z nim.
+4. **Pozycjonowanie cenowe:** 209 zł to (zgrubne przeliczenie, nieprecyzyjne)
+   ~52 USD — nad medianą kategorii (34,09 USD, n=10 USD), bliżej górnego
+   segmentu. Strona zachowuje się jak premium (brak rabatu, brak presji), ale
+   nie ma dowodu (opinii, gwarancji), który by to uzasadniał.
+5. **Hook „zobacz projekt przed produkcją" jest dostępny i nieużywany przez
+   nikogo w niszy (0/15), ale Catellae nie ma jeszcze funkcji, która by go
+   uzasadniała** — tylko reaktywny fallback dla złego zdjęcia. Nie rekomendować
+   tego hooka w reklamie, dopóki nie istnieje jako realny krok w procesie —
+   obietnica produkcyjna niespełniona przez produkt jest gorsza niż brak hooka
+   (zasada z `catellae-emotional-commerce`: nie wymyślać claimów produkcyjnych).
+6. **Ograniczenie danych:** żaden z sześciu wyspecjalizowanych konkurentów
+   znalezionych w Ad Library nie celuje w Polskę. Wnioski o mechanizmie i
+   rejestrze są przenaszalne, ale nie ma materiału porównawczego konkretnie dla
+   kampanii w PLN/PL.
 
 ---
 

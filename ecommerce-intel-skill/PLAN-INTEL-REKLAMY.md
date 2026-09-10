@@ -66,32 +66,61 @@ Jedyny poprawny licznik to widok per strona: `view_all_page_id=<page_id>`.
 
 ---
 
-## Do zrobienia
+## Zrobione (2026-09-10)
 
-### A. Zweryfikować podejrzane skany (blokuje pełność statystyk)
+### A. Zweryfikowane podejrzane skany — trzy z siedmiu odwrócone
 
-`patterns.js` wyrzucił 7 z 22 z mianownika. Trzy z nich to nowe marki:
-`callie.com` (1 sekcja), `morganandfrench.com` (2 sekcje),
-`thelittlekeepsakecompany.com` (1 sekcja).
+Obejrzane `output/<domena>/desktop-full.png` dla trzech nowych marek, które
+`patterns.js` wyrzucił z mianownika:
 
-Morgan & French to realnie bogaty sklep (cała linia Snozza™ + naszyjnik na prochy),
-więc 2 sekcje to prawie na pewno blokada bota albo motyw ładujący się poza sondą.
-Zgodnie z regułą **zrzut wygrywa z licznikiem** — obejrzeć
-`output/<domena>/{desktop,mobile}-full.png` przed uznaniem wyniku za pełny.
+- **`morganandfrench.com`** (flaga: 2 sekcje) — zrzut pokazuje pełny, bogaty PDP:
+  recenzje (5/5, kilka realnych), formularz personalizacji z 9 polami, sekcja
+  „Co się dzieje po zamówieniu", produkty powiązane. Fałszywy alarm sondy.
+- **`callie.com`** (flaga: 1 sekcja) — zrzut pokazuje kompletną stronę: wybór
+  kamienia urodzeniowego, 16 recenzji z weryfikacją zakupu, opis, 20 produktów
+  „You might also like". Fałszywy alarm.
+- **`thelittlekeepsakecompany.com`** (flaga: 1 sekcja) — zrzut pokazuje pełny PDP:
+  opcje grawerunku, cena przekreślona (−25%), opis, 21 recenzji, 4 produkty
+  powiązane. Fałszywy alarm.
 
-### B. Poprawić `rola` i `angle` dla trzech pozycji z pierwotnej listy
+**Wniosek: to nie jest problem z danymi, to luka w heurystyce liczenia sekcji
+w `dom-probe.js`** — prawdopodobnie nie rozpoznaje niestandardowego markupu tych
+trzech motywów. Zgodnie z regułą „zrzut wygrywa z licznikiem" te trzy sklepy
+są w rzeczywistości pełnoprawnymi skanami, ale **zostają wyłączone z mianownika
+`patterns.js`**, bo poprawka heurystyki sekcji to zmiana we wspólnej sondzie
+(`extractors/dom-probe.js`), która wpływa na wszystkie 22 skany naraz — osobna
+decyzja, nie coś do przemycenia przy okazji. Pozostałe cztery flagi
+(`boltiesd.com`, `ipetprints.com`, `joyfora.com`, `lucea.pl`) niesprawdzone —
+te są z pierwotnej listy, nie z dzisiejszej poprawki.
 
-Youtua, Febworld i Provcustom mają w CSV `rola: konkurent-bezposredni` i angle
-memorial/premium. Ad Library pokazuje, że **żadna z nich nie reklamuje naszyjnika
-ze zdjęciem zwierzęcia**:
+### B. Poprawione `rola` i `angle` dla trzech pozycji z pierwotnej listy
 
-- Youtua (~250) — bombki choinkowe, breloki dla pielęgniarek i fryzjerek
-- Febworld (~460) — wycieraczki, breloki, koszulki 3D, etui, plakaty; reklamy żywe od XI 2022
-- Provcustom (~170) — wesela, niemowlaki, dziennik żałoby, kaczka ze zdjęcia; druga marka „Customcraft" na tej samej domenie
+Youtua, Febworld i Provcustom miały w CSV `rola: konkurent-bezposredni`. Zmierzone
+liczniki **per strona reklamodawcy** (`view_all_page_id`, nie słowo kluczowe —
+patrz uwaga wyżej) pokazują, że żadna nie reklamuje naszyjnika ze zdjęciem zwierzęcia:
 
-To są fabryki print-on-demand z naszyjnikiem jako jednym SKU z setek, nie konkurenci
-bezpośredni. Etykieta `angle` opisywała jedną podstronę, nie to, co firma reklamuje.
-(Te trzy liczby są keywordowe — przy poprawce wziąć licznik per strona, patrz uwaga wyżej.)
+| Marka | Reklamy (per strona) | Co faktycznie reklamuje |
+|---|---|---|
+| Febworld | 450 | wycieraczki, breloki, koszulki 3D, etui, plakaty memorial; reklamy żywe od XI 2022 |
+| Youtua | 260 | bombki choinkowe, breloki dla pielęgniarek i fryzjerek |
+| Provcustom | 81 | wesela, niemowlaki, dziennik żałoby, kaczka ze zdjęcia; druga marka „Customcraft online gifts store" na tej samej domenie |
+
+Zapisane w CSV: `rola → reseller-generyczny` (ten sam label co Thejoydeal),
+`angle → prezent-generyczny-pod`, `zrodlo → ad-library-strona-2026-09-10`,
+`uwagi` z uzasadnieniem i page_id. Przeskanowane ponownie, żeby `kontekstRynkowy`
+w `store-data.json` niósł poprawione dane (sam zapis w CSV nic nie zmienia —
+`patterns.js` czyta ze skanu, nie z pliku wejściowego).
+
+Segmentacja paid nie zmieniła się liczebnie (nadal 7/8) — wszystkie trzy liczniki
+per-strona (450/260/81) zostają ponad progiem 50, mimo że są niższe od pierwotnych
+keywordowych (460/304/123 — patrz uwaga o metodologii wyżej).
+
+**Obserwacja poboczna, niezweryfikowana:** `callie.com`, przy oglądaniu zrzutu
+pod A, okazał się szerokim katalogiem biżuterii spersonalizowanej (rodzina,
+pary, zwierzęta, imiona) z sekcją „You might also like" pełną niepowiązanych
+wzorów — ten sam kształt co Febworld/Youtua/Provcustom, nie wąska marka pod
+zwierzęta jak Morgan & French czy Tulas. `rola: konkurent-sasiedni` może być
+zbyt hojna etykieta; niesprawdzone do końca, zostawione bez zmian.
 
 ### C. Zestawić z Hunterem i ocenić
 

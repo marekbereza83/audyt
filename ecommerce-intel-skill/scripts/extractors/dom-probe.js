@@ -234,7 +234,32 @@ function domProbe(cfg) {
   });
   out.przyciskiAkcji = przyciski.sort((a, b) => a.y - b.y).slice(0, 10);
   out.atcNadZgieciem = przyciski.some((p) => p.nadZgieciem);
-  out.atcSticky = przyciski.some((p) => p.sticky);
+
+  // Pasek sticky z ATC pojawia się dopiero PO przewinięciu obok formularza i chowa
+  // się z powrotem na górze strony — tak działa poprawnie zbudowany pasek, bo na
+  // górze przycisk i tak jest widoczny. Pętla wyżej odsiewa niewidoczne elementy
+  // (`if (!widoczny(el)) return`) i mierzy po powrocie na `scrollY = 0`, więc taki
+  // pasek nie miał szans się załapać.
+  //
+  // Regresja, którą to wywołało: raport ogłosił „sticky ATC ma 1 z 12 sklepów —
+  // najtańsze pole do wyróżnienia", a mierzył w rzeczywistości „ma sticky ATC
+  // widoczny już na samej górze strony". To zupełnie inna, dużo rzadsza cecha.
+  // Błąd dotyczył wszystkich sklepów jednakowo, więc statystyka wyglądała spójnie.
+  //
+  // `data-skan-sticky-widziany` znaczy core/browser.js w trakcie scrolla.
+  const atcWStickyPoScrollu = Array.from(document.querySelectorAll('[data-skan-sticky-widziany]'))
+    .some((kontener) => Array.from(kontener.querySelectorAll('button, a[href], input[type="submit"], [role="button"]'))
+      .some((el) => {
+        const t = (txt(el) || el.getAttribute('value') || el.getAttribute('aria-label') || '').toLowerCase();
+        if (!t || t.length > 60) return false;
+        return cfg.frazy.atc.some((f) => t.includes(f)) || cfg.frazy.kupTeraz.some((f) => t.includes(f));
+      }));
+
+  out.atcSticky = przyciski.some((p) => p.sticky) || atcWStickyPoScrollu;
+  // Rozbicie zostaje w danych, żeby dało się odróżnić pasek widoczny od razu od
+  // takiego, który dopiero wyjeżdża — to dwie różne decyzje projektowe.
+  out.atcStickyOdRazu = przyciski.some((p) => p.sticky);
+  out.atcStickyPoScrollu = atcWStickyPoScrollu;
 
   // ── 6. Personalizacja — mechanika, nie deklaracja ─────────────────────
   // Kluczowe dla naszego produktu: czy klient wgrywa zdjęcie na PDP, czy dopiero

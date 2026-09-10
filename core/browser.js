@@ -47,14 +47,48 @@ async function launchBrowser() {
  */
 async function scrollThroughPage(page, { step = null, pauza = 400 } = {}) {
   await page.evaluate(async ({ step, pauza }) => {
+    // Paski sticky (ATC na mobile, koszyk, cookie) z założenia POKAZUJĄ SIĘ dopiero
+    // w trakcie przewijania i chowają się z powrotem na górze strony. Sonda mierzy
+    // po powrocie na `scrollY = 0`, więc widziała je jako nieistniejące — i tak samo
+    // liczyła je u wszystkich skanowanych sklepów. Dlatego znaczymy je TU, w trakcie
+    // scrolla, a interpretacja zostaje w sondzie danej branży.
+    //
+    // Zamiast sprawdzać computed style każdego elementu na każdym kroku (drogie na
+    // długim PDP), próbkujemy kilka punktów przy krawędziach viewportu — pasek sticky
+    // z definicji tam siedzi — i idziemy w górę drzewa po pierwszy element
+    // fixed/sticky.
+    const oznaczSticky = () => {
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const punkty = [
+        [W / 2, H - 8], [W / 2, H - 40], [W / 2, H - 90],
+        [W / 2, 8], [W / 2, 40],
+        [16, H - 24], [W - 16, H - 24],
+      ];
+      for (const [x, y] of punkty) {
+        let el = null;
+        try { el = document.elementFromPoint(x, y); } catch { continue; }
+        for (let i = 0; i < 8 && el && el !== document.body; i++) {
+          const pos = getComputedStyle(el).position;
+          if (pos === 'fixed' || pos === 'sticky') {
+            el.setAttribute('data-skan-sticky-widziany', '1');
+            break;
+          }
+          el = el.parentElement;
+        }
+      }
+    };
+
     const krok = step || window.innerHeight;
     const total = document.body.scrollHeight;
     for (let y = 0; y < total; y += krok) {
       window.scrollTo(0, y);
       await new Promise((r) => setTimeout(r, pauza));
+      oznaczSticky();
     }
     window.scrollTo(0, 0);
     await new Promise((r) => setTimeout(r, pauza));
+    oznaczSticky();
   }, { step, pauza }).catch(() => {});
 }
 

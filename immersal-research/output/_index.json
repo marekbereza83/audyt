@@ -1,0 +1,291 @@
+{
+  "source": "https://developers.immersal.com/docs/sitemap.xml",
+  "crawled_at": "2026-09-24T05:51:17.698Z",
+  "pages": [
+    {
+      "url": "https://developers.immersal.com/docs/",
+      "title": "Welcome",
+      "file": "index.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/",
+      "title": "Maps & mapping",
+      "file": "mapsmapping.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/",
+      "title": "Immersal SDK",
+      "file": "immersal-sdk.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/",
+      "title": "Advanced",
+      "file": "mapsmapping/advanced.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/howdoesitwork/",
+      "title": "How does it work?",
+      "file": "immersal-sdk/howdoesitwork.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/howtomap/",
+      "title": "How To Map",
+      "file": "mapsmapping/howtomap.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/",
+      "title": "Sample Scenes",
+      "file": "unitysdk/samplescenes.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/compatibility/",
+      "title": "Compatibility",
+      "file": "immersal-sdk/compatibility.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/pricing/",
+      "title": "Pricing",
+      "file": "immersal-sdk/pricing.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/faq/",
+      "title": "FAQ",
+      "file": "immersal-sdk/faq.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/immersal-sdk/licenses/",
+      "title": "Licenses",
+      "file": "immersal-sdk/licenses.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/developerportal/",
+      "title": "Developer Portal",
+      "file": "mapsmapping/developerportal.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/tutorial/",
+      "title": "Getting started tutorial",
+      "file": "unitysdk/tutorial.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/",
+      "title": "Immersal Components",
+      "file": "unitysdk/immersalcomponents.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/projectconfiguration/",
+      "title": "Project configuration",
+      "file": "unitysdk/projectconfiguration.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/packages/",
+      "title": "Packages",
+      "file": "unitysdk/packages.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/ios/",
+      "title": "iOS Native",
+      "file": "ios.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/rest-api/",
+      "title": "REST API",
+      "file": "rest-api.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/support/",
+      "title": "Support",
+      "file": "support.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/howtomap/mapper-2.0/",
+      "title": "Immersal Mapper 2.0",
+      "file": "mapsmapping/howtomap/mapper-2.0.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/howtomap/immersal-mapper/",
+      "title": "Immersal Mapper (Older)",
+      "file": "mapsmapping/howtomap/immersal-mapper.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/developerportal/stitching-maps/",
+      "title": "Stitching Maps",
+      "file": "mapsmapping/developerportal/stitching-maps.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/developerportal/aligning-maps/",
+      "title": "Aligning Maps",
+      "file": "mapsmapping/developerportal/aligning-maps.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/custom-images/",
+      "title": "Custom Images",
+      "file": "mapsmapping/advanced/custom-images.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/map-editing-feature/",
+      "title": "Map Editing Feature",
+      "file": "mapsmapping/advanced/map-editing-feature.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/360-camera-pipeline/",
+      "title": "360 Camera Pipeline",
+      "file": "mapsmapping/advanced/360-camera-pipeline.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/blk2go-pipeline/",
+      "title": "BLK2GO Pipeline",
+      "file": "mapsmapping/advanced/blk2go-pipeline.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/metterport-pipeline/",
+      "title": "Matterport Pipeline",
+      "file": "mapsmapping/advanced/metterport-pipeline.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/polycam-pipeline/",
+      "title": "Polycam Pipeline",
+      "file": "mapsmapping/advanced/polycam-pipeline.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/gps-triangulation/",
+      "title": "GPS Triangulation",
+      "file": "mapsmapping/advanced/gps-triangulation.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/maptestingfeature/",
+      "title": "Map Testing",
+      "file": "mapsmapping/advanced/maptestingfeature.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/mapsmapping/advanced/mapoptimizationandcustomization/",
+      "title": "Map Optimization",
+      "file": "mapsmapping/advanced/mapoptimizationandcustomization.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/changelog/",
+      "title": "Changelog",
+      "file": "unitysdk/changelog.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/androidios/",
+      "title": "Android & iOS",
+      "file": "unitysdk/platforms/androidios.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/knownissues/",
+      "title": "Known Issues",
+      "file": "unitysdk/knownissues.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/multimap-sample/",
+      "title": "Multimap Sample",
+      "file": "unitysdk/samplescenes/multimap-sample.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/rest-api/python-example/",
+      "title": "Python Examples",
+      "file": "rest-api/python-example.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/thenavigationsamplegraph/",
+      "title": "The Navigation Sample (GraphBased)",
+      "file": "unitysdk/samplescenes/thenavigationsamplegraph.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/thenavigationsamplenavmesh/",
+      "title": "The Navigation Sample (NavMesh)",
+      "file": "unitysdk/samplescenes/thenavigationsamplenavmesh.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/content-placement-sample/",
+      "title": "Content Placement Sample",
+      "file": "unitysdk/samplescenes/content-placement-sample.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/immersalsession/",
+      "title": "ImmersalSession",
+      "file": "unitysdk/immersalcomponents/immersalsession.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/map-download-sample/",
+      "title": "Map Download Sample",
+      "file": "unitysdk/samplescenes/map-download-sample.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/samplescenes/geopose-sample/",
+      "title": "GeoPose Sample",
+      "file": "unitysdk/samplescenes/geopose-sample.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/magicleap2/",
+      "title": "Magic Leap 2",
+      "file": "unitysdk/platforms/magicleap2.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/hololens2/",
+      "title": "HoloLens 2",
+      "file": "unitysdk/platforms/hololens2.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/xreal/",
+      "title": "XREAL",
+      "file": "unitysdk/platforms/xreal.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/wechat/",
+      "title": "Wechat",
+      "file": "unitysdk/platforms/wechat.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/rokid/",
+      "title": "Rokid",
+      "file": "unitysdk/platforms/rokid.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/pico/",
+      "title": "Pico",
+      "file": "unitysdk/platforms/pico.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/platforms/avp/",
+      "title": "Apple Vision Pro",
+      "file": "unitysdk/platforms/avp.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/localizer/",
+      "title": "Localizer",
+      "file": "unitysdk/immersalcomponents/localizer.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/localizationmethod/",
+      "title": "LocalizationMethod",
+      "file": "unitysdk/immersalcomponents/localizationmethod.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/platformsupport/",
+      "title": "PlatformSupport",
+      "file": "unitysdk/immersalcomponents/platformsupport.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/cameradata/",
+      "title": "CameraData",
+      "file": "unitysdk/immersalcomponents/cameradata.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/sceneupdater/",
+      "title": "SceneUpdater",
+      "file": "unitysdk/immersalcomponents/sceneupdater.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/trackinganalyzer/",
+      "title": "TrackingAnalyzer",
+      "file": "unitysdk/immersalcomponents/trackinganalyzer.md"
+    },
+    {
+      "url": "https://developers.immersal.com/docs/unitysdk/immersalcomponents/mapoption/",
+      "title": "MapOption",
+      "file": "unitysdk/immersalcomponents/mapoption.md"
+    }
+  ]
+}
